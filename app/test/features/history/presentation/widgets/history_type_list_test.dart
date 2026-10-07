@@ -173,6 +173,42 @@ void main() {
     expect(find.byType(GoalTile), findsNothing);
   });
 
+  testWidgets('pulling down re-reads past goals', (tester) async {
+    when(
+      goals.fetchGoalsBefore(
+        ownerId: 'user-1',
+        type: GoalType.daily,
+        before: _today.start,
+      ),
+    ).thenAnswer((_) async => [goalCalled('Run 5k', _yesterday)]);
+
+    await pumpList(tester);
+    await tester.pumpAndSettle();
+    when(
+      goals.fetchGoalsBefore(
+        ownerId: 'user-1',
+        type: GoalType.daily,
+        before: _today.start,
+      ),
+    ).thenAnswer(
+      (_) async => [
+        goalCalled('Run 5k', _yesterday),
+        goalCalled('Read', _yesterday),
+      ],
+    );
+    await tester.fling(find.byType(GoalTile).first, const Offset(0, 300), 1000);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GoalTile), findsNWidgets(2));
+    verify(
+      goals.fetchGoalsBefore(
+        ownerId: 'user-1',
+        type: GoalType.daily,
+        before: _today.start,
+      ),
+    ).called(2);
+  });
+
   testWidgets('offers a retry when the goals fail to load', (tester) async {
     when(
       goals.fetchGoalsBefore(

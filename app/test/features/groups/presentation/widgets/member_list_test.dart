@@ -61,4 +61,14 @@ void main() {
 
     expect(find.text('Try again'), findsOneWidget);
   });
+
+  testWidgets('says so when the group has no members', (tester) async {
+    when(repository.fetchMembers('group-1')).thenAnswer((_) async => []);
+
+    await pumpList(tester);
+    await tester.pumpAndSettle();
+
+    expect(find.text('No members in this group yet.'), findsOneWidget);
+    expect(find.byType(ListTile), findsNothing);
+  });
 }

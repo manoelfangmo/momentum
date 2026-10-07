@@ -1,4 +1,6 @@
 import 'package:app/core/domain/domain.dart';
+import 'package:app/core/widgets/app_loading.dart';
+import 'package:app/core/widgets/empty_state.dart';
 import 'package:app/core/widgets/error_retry.dart';
 import 'package:app/features/goals/data/goals_repository.dart';
 import 'package:app/features/goals/presentation/widgets/goal_tile.dart';
@@ -19,9 +21,11 @@ class HistoryTypeList extends ConsumerWidget {
     final sectionsAsync = ref.watch(historySectionsProvider(type));
 
     return sectionsAsync.when(
-      data: (sections) =>
-          sections.isEmpty ? _EmptyHistory(type: type) : _list(sections),
-      loading: () => const Center(child: CircularProgressIndicator()),
+      data: (sections) => RefreshIndicator(
+        onRefresh: () => _refresh(ref),
+        child: sections.isEmpty ? _EmptyHistory(type: type) : _list(sections),
+      ),
+      loading: () => const AppLoading(),
       error: (error, stackTrace) => ErrorRetry(
         message: 'We could not load these goals.',
         onRetry: () {
@@ -34,6 +38,7 @@ class HistoryTypeList extends ConsumerWidget {
 
   Widget _list(List<HistorySection> sections) {
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
         for (final section in sections) ...[
@@ -42,6 +47,15 @@ class HistoryTypeList extends ConsumerWidget {
         ],
       ],
     );
+  }
+
+  /// Re-reads past goals, then waits for the tab to rebuild so the indicator
+  /// spins until there is something new on screen.
+  Future<void> _refresh(WidgetRef ref) {
+    ref.invalidate(historyGoalsProvider);
+    return ref
+        .read(historySectionsProvider(type).future)
+        .then((_) {}, onError: (_, _) {});
   }
 }
 
@@ -53,21 +67,12 @@ class _EmptyHistory extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
+      physics: const AlwaysScrollableScrollPhysics(),
       children: [
-        Icon(
-          Icons.history,
-          size: 40,
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'No past ${type.label} goals yet.',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.titleSmall,
+        EmptyState(
+          icon: Icons.history,
+          message: 'No past ${type.label} goals yet.',
         ),
       ],
     );

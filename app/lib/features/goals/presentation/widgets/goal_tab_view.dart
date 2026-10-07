@@ -1,4 +1,6 @@
 import 'package:app/core/domain/domain.dart';
+import 'package:app/core/widgets/app_loading.dart';
+import 'package:app/core/widgets/empty_state.dart';
 import 'package:app/core/widgets/error_retry.dart';
 import 'package:app/features/auth/data/member_repository.dart';
 import 'package:app/features/goals/data/goals_repository.dart';
@@ -28,7 +30,7 @@ class GoalTabView extends ConsumerWidget {
 
     return tabAsync.when(
       data: (tab) => _TabBody(type: type, tab: tab),
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const AppLoading(),
       error: (error, stackTrace) => ErrorRetry(
         message: 'We could not load these goals.',
         onRetry: () {
@@ -162,30 +164,13 @@ class _NoGoals extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
-      children: [
-        Icon(
-          Icons.flag_outlined,
-          size: 40,
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'No goals for this period yet.',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.titleSmall,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Pull down to refresh.',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+      children: const [
+        EmptyState(
+          icon: Icons.flag_outlined,
+          message: 'No goals for this period yet.',
+          detail: 'Pull down to refresh.',
         ),
       ],
     );

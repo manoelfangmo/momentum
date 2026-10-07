@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:app/core/domain/domain.dart';
 import 'package:app/core/utils/app_exception.dart';
 import 'package:app/core/utils/providers.dart';
@@ -94,6 +96,27 @@ void main() {
     await pumpTab(tester);
 
     expect(find.text("Grace's goals"), findsOneWidget);
+  });
+
+  testWidgets('shows a spinner while the goals load', (tester) async {
+    final inFlight = Completer<List<Goal>>();
+    when(goals.fetchGoals(ownerId: 'user-1', period: _today))
+        .thenAnswer((_) => inFlight.future);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: Scaffold(body: GoalTabView(type: GoalType.daily)),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    inFlight.complete([]);
+    await tester.pumpAndSettle();
   });
 
   testWidgets('says so when the period is empty', (tester) async {

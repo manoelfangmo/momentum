@@ -1,3 +1,4 @@
+import 'package:app/core/widgets/app_loading.dart';
 import 'package:app/core/widgets/error_retry.dart';
 import 'package:app/features/groups/data/groups_repository.dart';
 import 'package:app/features/groups/domain/group.dart';
@@ -23,8 +24,17 @@ class GroupPage extends ConsumerWidget {
         actions: const [SignOutButton()],
       ),
       body: groupAsync.when(
-        data: (group) => _GroupDetails(group: group),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        data: (group) => RefreshIndicator(
+          onRefresh: () {
+            ref.invalidate(currentGroupProvider);
+            ref.invalidate(groupMembersProvider(group.id));
+            return ref
+                .read(currentGroupProvider.future)
+                .then((_) {}, onError: (_, _) {});
+          },
+          child: _GroupDetails(group: group),
+        ),
+        loading: () => const AppLoading(),
         error: (error, stackTrace) => ErrorRetry(
           message: 'We could not load your group.',
           onRetry: () => ref.invalidate(currentGroupProvider),
@@ -42,6 +52,7 @@ class _GroupDetails extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(24),
       children: [
         GroupHeader(group: group),

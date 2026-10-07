@@ -39,5 +39,6 @@ class OnboardingController extends _$OnboardingController {
     // notifier, so the state is settled first.
     state = const AsyncData(null);
     ref.invalidate(currentMemberProvider);
+    ref.invalidate(groupMembersProvider);
   }
 }

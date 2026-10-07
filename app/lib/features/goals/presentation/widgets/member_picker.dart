@@ -21,15 +21,27 @@ class MemberPicker extends ConsumerWidget {
     final selectedId = ref.watch(goalsViewControllerProvider).selectedMemberId;
 
     return membersAsync.when(
-      data: (members) => _PickerButton(
-        members: _meFirst(members, signedInId),
-        signedInId: signedInId,
-        selectedId: selectedId,
-        onSelected: ref.read(goalsViewControllerProvider.notifier).selectMember,
+      data: (members) => members.isEmpty
+          ? IconButton(
+              icon: const Icon(Icons.person_outline),
+              tooltip: 'No members in this group yet. Tap to try again.',
+              onPressed: () => ref.invalidate(groupMembersProvider(groupId)),
+            )
+          : _PickerButton(
+              members: _meFirst(members, signedInId),
+              signedInId: signedInId,
+              selectedId: selectedId,
+              onSelected: ref
+                  .read(goalsViewControllerProvider.notifier)
+                  .selectMember,
+            ),
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        child: SizedBox.square(
+          dimension: 16,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
       ),
-      // Nothing to offer yet, and the tab underneath is already showing that
-      // something is loading.
-      loading: () => const SizedBox.shrink(),
       error: (error, stackTrace) => IconButton(
         icon: const Icon(Icons.person_off_outlined),
         tooltip: 'We could not load your group. Tap to try again.',

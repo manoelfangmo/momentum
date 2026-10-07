@@ -26,7 +26,7 @@ class GroupsRepository {
   /// Creates a group and makes the caller its first member.
   Future<Group> createGroup(String name) {
     return _group(
-      () => _supabase.rpc(Rpc.createGroup, params: {'p_name': name}),
+      () => _supabase.rpc(Rpc.createGroup, params: {Rpc.pName: name}),
     );
   }
 
@@ -41,7 +41,7 @@ class GroupsRepository {
   Future<Group> joinGroup(String groupId) async {
     if (!isUuid(groupId)) throw const ValidationException(_badCodeMessage);
     return _group(
-      () => _supabase.rpc(Rpc.joinGroup, params: {'p_group_id': groupId}),
+      () => _supabase.rpc(Rpc.joinGroup, params: {Rpc.pGroupId: groupId}),
     );
   }
 

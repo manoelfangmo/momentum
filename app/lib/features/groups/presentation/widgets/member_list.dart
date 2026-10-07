@@ -1,4 +1,6 @@
 import 'package:app/core/domain/domain.dart';
+import 'package:app/core/widgets/app_loading.dart';
+import 'package:app/core/widgets/empty_state.dart';
 import 'package:app/core/widgets/error_retry.dart';
 import 'package:app/features/auth/data/member_repository.dart';
 import 'package:app/features/groups/data/groups_repository.dart';
@@ -31,15 +33,24 @@ class MemberList extends ConsumerWidget {
         ),
         const SizedBox(height: 4),
         membersAsync.when(
-          data: (members) => Column(
-            children: [
-              for (final member in members)
-                _MemberTile(member: member, isYou: member.id == signedInId),
-            ],
-          ),
+          data: (members) => members.isEmpty
+              ? const EmptyState(
+                  icon: Icons.group_outlined,
+                  message: 'No members in this group yet.',
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                )
+              : Column(
+                  children: [
+                    for (final member in members)
+                      _MemberTile(
+                        member: member,
+                        isYou: member.id == signedInId,
+                      ),
+                  ],
+                ),
           loading: () => const Padding(
             padding: EdgeInsets.all(24),
-            child: Center(child: CircularProgressIndicator()),
+            child: AppLoading(),
           ),
           error: (error, stackTrace) => ErrorRetry(
             message: 'We could not load the members of this group.',

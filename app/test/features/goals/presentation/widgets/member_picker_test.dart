@@ -103,6 +103,15 @@ void main() {
 
     expect(find.byIcon(Icons.person_off_outlined), findsOneWidget);
   });
+
+  testWidgets('says so when the group has no members', (tester) async {
+    when(repository.fetchMembers('group-1')).thenAnswer((_) async => []);
+
+    await pumpPicker(tester);
+
+    expect(find.byIcon(Icons.person_outline), findsOneWidget);
+    expect(find.byType(PopupMenuButton<String>), findsNothing);
+  });
 }
 
 /// An app bar so the picker is laid out where it actually lives.

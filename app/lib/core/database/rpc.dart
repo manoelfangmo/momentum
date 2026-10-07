@@ -10,4 +10,10 @@ abstract final class Rpc {
   static const joinGroup = 'join_group';
   static const verifyGoalComplete = 'verify_goal_complete';
   static const markGoalMissed = 'mark_goal_missed';
+
+  /// Argument names the SQL functions take. Repositories pass these rather
+  /// than repeating the `p_` literals at each call.
+  static const pName = 'p_name';
+  static const pGroupId = 'p_group_id';
+  static const pGoalId = 'p_goal_id';
 }

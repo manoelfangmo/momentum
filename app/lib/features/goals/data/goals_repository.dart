@@ -86,14 +86,14 @@ class GoalsRepository {
   Future<Goal> verifyComplete(String goalId) {
     return _goal(
       () =>
-          _supabase.rpc(Rpc.verifyGoalComplete, params: {'p_goal_id': goalId}),
+          _supabase.rpc(Rpc.verifyGoalComplete, params: {Rpc.pGoalId: goalId}),
     );
   }
 
   /// Marks the caller's own pending goal missed.
   Future<Goal> markMissed(String goalId) {
     return _goal(
-      () => _supabase.rpc(Rpc.markGoalMissed, params: {'p_goal_id': goalId}),
+      () => _supabase.rpc(Rpc.markGoalMissed, params: {Rpc.pGoalId: goalId}),
     );
   }
 

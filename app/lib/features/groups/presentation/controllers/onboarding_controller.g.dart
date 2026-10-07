@@ -52,7 +52,7 @@ final class OnboardingControllerProvider
 }
 
 String _$onboardingControllerHash() =>
-    r'f8f9f57c309218ad88ab4f5d221324c68fb27b1c';
+    r'fdf55abbe94f962556d1cf73432be52d35e42d67';
 
 /// Runs the two ways out of onboarding and holds their progress.
 ///

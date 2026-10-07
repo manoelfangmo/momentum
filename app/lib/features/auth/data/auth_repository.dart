@@ -1,3 +1,4 @@
+import 'package:app/core/database/members_table.dart';
 import 'package:app/core/utils/app_exception.dart';
 import 'package:app/core/utils/providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -31,7 +32,7 @@ class AuthRepository {
       () => _supabase.auth.signUp(
         email: email,
         password: password,
-        data: {'name': name},
+        data: {MembersTable.memberName: name},
       ),
     );
   }
