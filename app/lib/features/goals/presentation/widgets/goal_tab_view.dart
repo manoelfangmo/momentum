@@ -4,6 +4,7 @@ import 'package:app/features/auth/data/member_repository.dart';
 import 'package:app/features/goals/data/goals_repository.dart';
 import 'package:app/features/goals/presentation/controllers/goal_tab_controller.dart';
 import 'package:app/features/goals/presentation/models/goal_tab_data.dart';
+import 'package:app/features/goals/presentation/widgets/day_selector.dart';
 import 'package:app/features/goals/presentation/widgets/goal_tile.dart';
 import 'package:app/features/groups/data/groups_repository.dart';
 import 'package:flutter/material.dart';
@@ -51,7 +52,9 @@ class _TabBody extends ConsumerWidget {
     return Column(
       children: [
         _TabHeader(tab: tab),
-        // T11 puts the Day selector here, between the header and the list.
+        // Only the Day tab has a date to move: the others always show the
+        // period containing now.
+        if (type == GoalType.daily) const DaySelector(),
         Expanded(
           child: RefreshIndicator(
             onRefresh: () => _refresh(ref),
