@@ -1,6 +1,7 @@
 import 'package:app/core/utils/providers.dart';
 import 'package:app/features/goals/domain/goal.dart';
 import 'package:app/features/goals/domain/goal_status.dart';
+import 'package:app/features/goals/presentation/widgets/goal_actions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -41,7 +42,7 @@ class GoalTile extends ConsumerWidget {
             ],
           ),
         ),
-        // T12 hangs Verify / Mark missed off `trailing`.
+        trailing: GoalActions(goal: goal),
       ),
     );
   }

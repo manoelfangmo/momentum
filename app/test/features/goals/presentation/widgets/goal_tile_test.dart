@@ -1,7 +1,9 @@
 import 'package:app/core/domain/domain.dart';
 import 'package:app/core/utils/providers.dart';
+import 'package:app/features/auth/data/member_repository.dart';
 import 'package:app/features/goals/domain/goal.dart';
 import 'package:app/features/goals/domain/goal_status.dart';
+import 'package:app/features/goals/presentation/widgets/goal_actions.dart';
 import 'package:app/features/goals/presentation/widgets/goal_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,8 +29,15 @@ void main() {
   Future<void> pumpTile(WidgetTester tester, Goal goal, DateTime now) {
     return tester.pumpWidget(
       ProviderScope(
-        overrides: [clockProvider.overrideWithValue(() => now)],
-        child: MaterialApp(home: Scaffold(body: GoalTile(goal: goal))),
+        overrides: [
+          clockProvider.overrideWithValue(() => now),
+          // Nobody signed in: the tile still renders, and GoalActions offers
+          // nothing. Action-button cases live in goal_actions_test.
+          currentMemberProvider.overrideWith((ref) => null),
+        ],
+        child: MaterialApp(
+          home: Scaffold(body: GoalTile(goal: goal)),
+        ),
       ),
     );
   }
@@ -66,5 +75,11 @@ void main() {
     );
 
     expect(find.text('Missed'), findsOneWidget);
+  });
+
+  testWidgets('hangs the actions off the trailing slot', (tester) async {
+    await pumpTile(tester, goalWith(), DateTime(2026, 10, 7, 9));
+
+    expect(find.byType(GoalActions), findsOneWidget);
   });
 }
