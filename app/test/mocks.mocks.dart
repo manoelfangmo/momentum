@@ -4,13 +4,16 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i4;
+import 'dart:async' as _i6;
 
 import 'package:app/core/domain/domain.dart' as _i2;
-import 'package:app/features/auth/data/auth_repository.dart' as _i3;
-import 'package:app/features/auth/data/member_repository.dart' as _i6;
+import 'package:app/features/auth/data/auth_repository.dart' as _i5;
+import 'package:app/features/auth/data/member_repository.dart' as _i7;
+import 'package:app/features/groups/data/groups_repository.dart' as _i8;
+import 'package:app/features/groups/domain/group.dart' as _i3;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:supabase_flutter/supabase_flutter.dart' as _i5;
+import 'package:mockito/src/dummies.dart' as _i9;
+import 'package:supabase/supabase.dart' as _i4;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -33,19 +36,77 @@ class _FakeMember_0 extends _i1.SmartFake implements _i2.Member {
     : super(parent, parentInvocation);
 }
 
+class _FakeGroup_1 extends _i1.SmartFake implements _i3.Group {
+  _FakeGroup_1(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeFunctionsClient_2 extends _i1.SmartFake
+    implements _i4.FunctionsClient {
+  _FakeFunctionsClient_2(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeSupabaseStorageClient_3 extends _i1.SmartFake
+    implements _i4.SupabaseStorageClient {
+  _FakeSupabaseStorageClient_3(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeRealtimeClient_4 extends _i1.SmartFake
+    implements _i4.RealtimeClient {
+  _FakeRealtimeClient_4(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakePostgrestClient_5 extends _i1.SmartFake
+    implements _i4.PostgrestClient {
+  _FakePostgrestClient_5(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeGoTrueClient_6 extends _i1.SmartFake implements _i4.GoTrueClient {
+  _FakeGoTrueClient_6(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeSupabaseQueryBuilder_7 extends _i1.SmartFake
+    implements _i4.SupabaseQueryBuilder {
+  _FakeSupabaseQueryBuilder_7(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeSupabaseQuerySchema_8 extends _i1.SmartFake
+    implements _i4.SupabaseQuerySchema {
+  _FakeSupabaseQuerySchema_8(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakePostgrestFilterBuilder_9<T1> extends _i1.SmartFake
+    implements _i4.PostgrestFilterBuilder<T1> {
+  _FakePostgrestFilterBuilder_9(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeRealtimeChannel_10 extends _i1.SmartFake
+    implements _i4.RealtimeChannel {
+  _FakeRealtimeChannel_10(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [AuthRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockAuthRepository extends _i1.Mock implements _i3.AuthRepository {
+class MockAuthRepository extends _i1.Mock implements _i5.AuthRepository {
   @override
-  _i4.Stream<_i5.AuthState> authStateChanges() => (super.noSuchMethod(
+  _i6.Stream<_i4.AuthState> authStateChanges() => (super.noSuchMethod(
     Invocation.method(#authStateChanges, []),
-    returnValue: _i4.Stream<_i5.AuthState>.empty(),
-    returnValueForMissingStub: _i4.Stream<_i5.AuthState>.empty(),
-  ) as _i4.Stream<_i5.AuthState>);
+    returnValue: _i6.Stream<_i4.AuthState>.empty(),
+    returnValueForMissingStub: _i6.Stream<_i4.AuthState>.empty(),
+  ) as _i6.Stream<_i4.AuthState>);
 
   @override
-  _i4.Future<void> signUp({
+  _i6.Future<void> signUp({
     required String? name,
     required String? email,
     required String? password,
@@ -55,40 +116,281 @@ class MockAuthRepository extends _i1.Mock implements _i3.AuthRepository {
       #email: email,
       #password: password,
     }),
-    returnValue: _i4.Future<void>.value(),
-    returnValueForMissingStub: _i4.Future<void>.value(),
-  ) as _i4.Future<void>);
+    returnValue: _i6.Future<void>.value(),
+    returnValueForMissingStub: _i6.Future<void>.value(),
+  ) as _i6.Future<void>);
 
   @override
-  _i4.Future<void> signIn({
+  _i6.Future<void> signIn({
     required String? email,
     required String? password,
   }) => (super.noSuchMethod(
     Invocation.method(#signIn, [], {#email: email, #password: password}),
-    returnValue: _i4.Future<void>.value(),
-    returnValueForMissingStub: _i4.Future<void>.value(),
-  ) as _i4.Future<void>);
+    returnValue: _i6.Future<void>.value(),
+    returnValueForMissingStub: _i6.Future<void>.value(),
+  ) as _i6.Future<void>);
 
   @override
-  _i4.Future<void> signOut() => (super.noSuchMethod(
+  _i6.Future<void> signOut() => (super.noSuchMethod(
     Invocation.method(#signOut, []),
-    returnValue: _i4.Future<void>.value(),
-    returnValueForMissingStub: _i4.Future<void>.value(),
-  ) as _i4.Future<void>);
+    returnValue: _i6.Future<void>.value(),
+    returnValueForMissingStub: _i6.Future<void>.value(),
+  ) as _i6.Future<void>);
 }
 
 /// A class which mocks [MemberRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockMemberRepository extends _i1.Mock implements _i6.MemberRepository {
+class MockMemberRepository extends _i1.Mock implements _i7.MemberRepository {
   @override
-  _i4.Future<_i2.Member> fetchMember(String? id) => (super.noSuchMethod(
+  _i6.Future<_i2.Member> fetchMember(String? id) => (super.noSuchMethod(
     Invocation.method(#fetchMember, [id]),
-    returnValue: _i4.Future<_i2.Member>.value(
+    returnValue: _i6.Future<_i2.Member>.value(
       _FakeMember_0(this, Invocation.method(#fetchMember, [id])),
     ),
-    returnValueForMissingStub: _i4.Future<_i2.Member>.value(
+    returnValueForMissingStub: _i6.Future<_i2.Member>.value(
       _FakeMember_0(this, Invocation.method(#fetchMember, [id])),
     ),
-  ) as _i4.Future<_i2.Member>);
+  ) as _i6.Future<_i2.Member>);
+}
+
+/// A class which mocks [GroupsRepository].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockGroupsRepository extends _i1.Mock implements _i8.GroupsRepository {
+  @override
+  _i6.Future<_i3.Group> createGroup(String? name) => (super.noSuchMethod(
+    Invocation.method(#createGroup, [name]),
+    returnValue: _i6.Future<_i3.Group>.value(
+      _FakeGroup_1(this, Invocation.method(#createGroup, [name])),
+    ),
+    returnValueForMissingStub: _i6.Future<_i3.Group>.value(
+      _FakeGroup_1(this, Invocation.method(#createGroup, [name])),
+    ),
+  ) as _i6.Future<_i3.Group>);
+
+  @override
+  _i6.Future<_i3.Group> joinGroup(String? groupId) => (super.noSuchMethod(
+    Invocation.method(#joinGroup, [groupId]),
+    returnValue: _i6.Future<_i3.Group>.value(
+      _FakeGroup_1(this, Invocation.method(#joinGroup, [groupId])),
+    ),
+    returnValueForMissingStub: _i6.Future<_i3.Group>.value(
+      _FakeGroup_1(this, Invocation.method(#joinGroup, [groupId])),
+    ),
+  ) as _i6.Future<_i3.Group>);
+
+  @override
+  _i6.Future<_i3.Group> fetchGroup(String? id) => (super.noSuchMethod(
+    Invocation.method(#fetchGroup, [id]),
+    returnValue: _i6.Future<_i3.Group>.value(
+      _FakeGroup_1(this, Invocation.method(#fetchGroup, [id])),
+    ),
+    returnValueForMissingStub: _i6.Future<_i3.Group>.value(
+      _FakeGroup_1(this, Invocation.method(#fetchGroup, [id])),
+    ),
+  ) as _i6.Future<_i3.Group>);
+
+  @override
+  _i6.Future<List<_i2.Member>> fetchMembers(String? groupId) =>
+      (super.noSuchMethod(
+        Invocation.method(#fetchMembers, [groupId]),
+        returnValue: _i6.Future<List<_i2.Member>>.value(<_i2.Member>[]),
+        returnValueForMissingStub: _i6.Future<List<_i2.Member>>.value(
+          <_i2.Member>[],
+        ),
+      ) as _i6.Future<List<_i2.Member>>);
+}
+
+/// A class which mocks [SupabaseClient].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockSupabaseClient extends _i1.Mock implements _i4.SupabaseClient {
+  @override
+  _i4.FunctionsClient get functions => (super.noSuchMethod(
+    Invocation.getter(#functions),
+    returnValue: _FakeFunctionsClient_2(this, Invocation.getter(#functions)),
+    returnValueForMissingStub: _FakeFunctionsClient_2(
+      this,
+      Invocation.getter(#functions),
+    ),
+  ) as _i4.FunctionsClient);
+
+  @override
+  _i4.SupabaseStorageClient get storage => (super.noSuchMethod(
+    Invocation.getter(#storage),
+    returnValue: _FakeSupabaseStorageClient_3(
+      this,
+      Invocation.getter(#storage),
+    ),
+    returnValueForMissingStub: _FakeSupabaseStorageClient_3(
+      this,
+      Invocation.getter(#storage),
+    ),
+  ) as _i4.SupabaseStorageClient);
+
+  @override
+  _i4.RealtimeClient get realtime => (super.noSuchMethod(
+    Invocation.getter(#realtime),
+    returnValue: _FakeRealtimeClient_4(this, Invocation.getter(#realtime)),
+    returnValueForMissingStub: _FakeRealtimeClient_4(
+      this,
+      Invocation.getter(#realtime),
+    ),
+  ) as _i4.RealtimeClient);
+
+  @override
+  _i4.PostgrestClient get rest => (super.noSuchMethod(
+    Invocation.getter(#rest),
+    returnValue: _FakePostgrestClient_5(this, Invocation.getter(#rest)),
+    returnValueForMissingStub: _FakePostgrestClient_5(
+      this,
+      Invocation.getter(#rest),
+    ),
+  ) as _i4.PostgrestClient);
+
+  @override
+  Map<String, String> get headers => (super.noSuchMethod(
+    Invocation.getter(#headers),
+    returnValue: <String, String>{},
+    returnValueForMissingStub: <String, String>{},
+  ) as Map<String, String>);
+
+  @override
+  _i4.GoTrueClient get auth => (super.noSuchMethod(
+    Invocation.getter(#auth),
+    returnValue: _FakeGoTrueClient_6(this, Invocation.getter(#auth)),
+    returnValueForMissingStub: _FakeGoTrueClient_6(
+      this,
+      Invocation.getter(#auth),
+    ),
+  ) as _i4.GoTrueClient);
+
+  @override
+  set functions(_i4.FunctionsClient? value) => super.noSuchMethod(
+    Invocation.setter(#functions, value),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  set storage(_i4.SupabaseStorageClient? value) => super.noSuchMethod(
+    Invocation.setter(#storage, value),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  set realtime(_i4.RealtimeClient? value) => super.noSuchMethod(
+    Invocation.setter(#realtime, value),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  set rest(_i4.PostgrestClient? value) => super.noSuchMethod(
+    Invocation.setter(#rest, value),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  set headers(Map<String, String>? newHeaders) => super.noSuchMethod(
+    Invocation.setter(#headers, newHeaders),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  _i4.SupabaseQueryBuilder from(String? table) => (super.noSuchMethod(
+    Invocation.method(#from, [table]),
+    returnValue: _FakeSupabaseQueryBuilder_7(
+      this,
+      Invocation.method(#from, [table]),
+    ),
+    returnValueForMissingStub: _FakeSupabaseQueryBuilder_7(
+      this,
+      Invocation.method(#from, [table]),
+    ),
+  ) as _i4.SupabaseQueryBuilder);
+
+  @override
+  _i4.SupabaseQuerySchema schema(String? schema) => (super.noSuchMethod(
+    Invocation.method(#schema, [schema]),
+    returnValue: _FakeSupabaseQuerySchema_8(
+      this,
+      Invocation.method(#schema, [schema]),
+    ),
+    returnValueForMissingStub: _FakeSupabaseQuerySchema_8(
+      this,
+      Invocation.method(#schema, [schema]),
+    ),
+  ) as _i4.SupabaseQuerySchema);
+
+  @override
+  _i4.PostgrestFilterBuilder<T> rpc<T>(
+    String? fn, {
+    Map<String, dynamic>? params,
+    dynamic get = false,
+  }) => (super.noSuchMethod(
+    Invocation.method(#rpc, [fn], {#params: params, #get: get}),
+    returnValue: _FakePostgrestFilterBuilder_9<T>(
+      this,
+      Invocation.method(#rpc, [fn], {#params: params, #get: get}),
+    ),
+    returnValueForMissingStub: _FakePostgrestFilterBuilder_9<T>(
+      this,
+      Invocation.method(#rpc, [fn], {#params: params, #get: get}),
+    ),
+  ) as _i4.PostgrestFilterBuilder<T>);
+
+  @override
+  _i4.RealtimeChannel channel(
+    String? name, {
+    _i4.RealtimeChannelConfig? opts = const _i4.RealtimeChannelConfig(),
+  }) => (super.noSuchMethod(
+    Invocation.method(#channel, [name], {#opts: opts}),
+    returnValue: _FakeRealtimeChannel_10(
+      this,
+      Invocation.method(#channel, [name], {#opts: opts}),
+    ),
+    returnValueForMissingStub: _FakeRealtimeChannel_10(
+      this,
+      Invocation.method(#channel, [name], {#opts: opts}),
+    ),
+  ) as _i4.RealtimeChannel);
+
+  @override
+  List<_i4.RealtimeChannel> getChannels() => (super.noSuchMethod(
+    Invocation.method(#getChannels, []),
+    returnValue: <_i4.RealtimeChannel>[],
+    returnValueForMissingStub: <_i4.RealtimeChannel>[],
+  ) as List<_i4.RealtimeChannel>);
+
+  @override
+  _i6.Future<String> removeChannel(_i4.RealtimeChannel? channel) =>
+      (super.noSuchMethod(
+        Invocation.method(#removeChannel, [channel]),
+        returnValue: _i6.Future<String>.value(
+          _i9.dummyValue<String>(
+            this,
+            Invocation.method(#removeChannel, [channel]),
+          ),
+        ),
+        returnValueForMissingStub: _i6.Future<String>.value(
+          _i9.dummyValue<String>(
+            this,
+            Invocation.method(#removeChannel, [channel]),
+          ),
+        ),
+      ) as _i6.Future<String>);
+
+  @override
+  _i6.Future<List<String>> removeAllChannels() => (super.noSuchMethod(
+    Invocation.method(#removeAllChannels, []),
+    returnValue: _i6.Future<List<String>>.value(<String>[]),
+    returnValueForMissingStub: _i6.Future<List<String>>.value(<String>[]),
+  ) as _i6.Future<List<String>>);
+
+  @override
+  _i6.Future<void> dispose() => (super.noSuchMethod(
+    Invocation.method(#dispose, []),
+    returnValue: _i6.Future<void>.value(),
+    returnValueForMissingStub: _i6.Future<void>.value(),
+  ) as _i6.Future<void>);
 }

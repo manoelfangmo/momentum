@@ -1,14 +1,60 @@
+import 'package:app/core/widgets/error_retry.dart';
+import 'package:app/features/groups/data/groups_repository.dart';
+import 'package:app/features/groups/domain/group.dart';
+import 'package:app/features/groups/presentation/widgets/copy_group_code_button.dart';
+import 'package:app/features/groups/presentation/widgets/group_header.dart';
+import 'package:app/features/groups/presentation/widgets/member_list.dart';
+import 'package:app/features/groups/presentation/widgets/sign_out_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Placeholder for the member list and the invite code, built in T07.
-class GroupPage extends StatelessWidget {
+/// The `/group` branch: who is in the group, the code to invite more people,
+/// and the way out of the session.
+class GroupPage extends ConsumerWidget {
   const GroupPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final groupAsync = ref.watch(currentGroupProvider);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Group')),
-      body: const Center(child: Text('Your group will show up here.')),
+      appBar: AppBar(
+        title: const Text('Group'),
+        actions: const [SignOutButton()],
+      ),
+      body: groupAsync.when(
+        data: (group) => _GroupDetails(group: group),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stackTrace) => ErrorRetry(
+          message: 'We could not load your group.',
+          onRetry: () => ref.invalidate(currentGroupProvider),
+        ),
+      ),
+    );
+  }
+}
+
+class _GroupDetails extends StatelessWidget {
+  const _GroupDetails({required this.group});
+
+  final Group group;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        GroupHeader(group: group),
+        const SizedBox(height: 16),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: CopyGroupCodeButton(code: group.id),
+        ),
+        const SizedBox(height: 24),
+        const Divider(),
+        const SizedBox(height: 8),
+        MemberList(groupId: group.id),
+      ],
     );
   }
 }

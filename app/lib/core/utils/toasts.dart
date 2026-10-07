@@ -21,6 +21,14 @@ void showErrorToast(BuildContext context, Object error) {
     );
 }
 
+/// Confirms something that left no visible trace, such as a copy to the
+/// clipboard. Takes finished copy: there is nothing to map.
+void showSuccessToast(BuildContext context, String message) {
+  ScaffoldMessenger.of(context)
+    ..clearSnackBars()
+    ..showSnackBar(SnackBar(content: Text(message)));
+}
+
 const _fallbackMessage = 'Something went wrong. Please try again.';
 
 String _messageFor(Object error) => switch (error) {

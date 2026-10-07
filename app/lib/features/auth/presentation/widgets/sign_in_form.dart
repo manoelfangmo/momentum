@@ -1,7 +1,7 @@
 import 'package:app/core/utils/toasts.dart';
+import 'package:app/core/widgets/submit_button.dart';
 import 'package:app/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:app/features/auth/presentation/validators/auth_validators.dart';
-import 'package:app/features/auth/presentation/widgets/submit_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

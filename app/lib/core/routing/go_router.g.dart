@@ -14,6 +14,10 @@ part of 'go_router.dart';
 /// belongs. None of them rebuilds this provider: the member change notifies
 /// [_RouterRefresh], go_router re-runs [_redirectFor], and the existing
 /// navigator state survives.
+///
+/// Read this through `ref.watch` from the widget tree, the way `App` does.
+/// Riverpod pauses the subscription below while nothing is watching, and a
+/// paused subscription means a sign-in the redirect never hears about.
 
 @ProviderFor(goRouter)
 final goRouterProvider = GoRouterProvider._();
@@ -24,6 +28,10 @@ final goRouterProvider = GoRouterProvider._();
 /// belongs. None of them rebuilds this provider: the member change notifies
 /// [_RouterRefresh], go_router re-runs [_redirectFor], and the existing
 /// navigator state survives.
+///
+/// Read this through `ref.watch` from the widget tree, the way `App` does.
+/// Riverpod pauses the subscription below while nothing is watching, and a
+/// paused subscription means a sign-in the redirect never hears about.
 
 final class GoRouterProvider
     extends $FunctionalProvider<GoRouter, GoRouter, GoRouter>
@@ -34,6 +42,10 @@ final class GoRouterProvider
   /// belongs. None of them rebuilds this provider: the member change notifies
   /// [_RouterRefresh], go_router re-runs [_redirectFor], and the existing
   /// navigator state survives.
+  ///
+  /// Read this through `ref.watch` from the widget tree, the way `App` does.
+  /// Riverpod pauses the subscription below while nothing is watching, and a
+  /// paused subscription means a sign-in the redirect never hears about.
   GoRouterProvider._()
     : super(
         from: null,
