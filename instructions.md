@@ -6,36 +6,52 @@ What it is: a group accountability app. Members of ONE group create one-off goal
 Stack:
 - Flutter (latest stable), Dart 3 (sealed classes, records, patterns OK)
 - Supabase running LOCALLY via Supabase CLI (supabase start). Migrations in supabase/migrations.
-- supabase_flutter for client access
-- flutter_riverpod + riverpod_annotation + riverpod_generator (code-gen providers)
-- go_router for navigation
-- freezed + json_serializable for entities/DTOs
-- build_runner for code gen
+- supabase_flutter, flutter_riverpod + riverpod_annotation + riverpod_generator (code gen),
+  go_router, freezed + json_serializable (field_rename: snake in build.yaml), build_runner.
 
-Architecture: clean architecture, FEATURE-FIRST. Each feature lives in lib/features/<feature>/
-with exactly these layers:
-  domain/        entities (freezed, no JSON), repository INTERFACES (abstract classes),
-                 pure business logic. No Flutter, no Supabase imports.
-  data/          DTOs (freezed + json_serializable, snake_case <-> camelCase mapping),
-                 remote data sources (talk to SupabaseClient), repository IMPLEMENTATIONS,
-                 DTO <-> entity mappers, and the Riverpod provider exposing the repository.
-  application/   Riverpod notifiers/services: orchestrate repositories, hold screen state,
-                 expose AsyncValue to the UI. No widgets.
-  presentation/  screens + widgets only. Watch application providers. No Supabase calls.
-Shared code lives in lib/core/ (router, supabase client provider, errors, period utils, theme).
+Architecture (follow ARCHITECTURE.md exactly). Feature-first; each feature in
+lib/features/<feature>/ with these layers. Dependencies point down only:
+  presentation -> application -> data -> domain
+  domain/        Freezed entities (with fromJson), value objects, sealed decisions,
+                 computed facts on the entity. NO Flutter, Supabase or Riverpod imports.
+                 NO repository interfaces.
+  data/          <name>_repository.dart: a concrete class taking SupabaseClient in its
+                 constructor, plus a @riverpod provider that reads supabaseProvider.
+                 @riverpod Future providers for each read the UI needs.
+                 data/models.dart: command objects (with toJson) for methods with >2-3 params.
+  application/   ONLY when an action calls >1 repository, runs several steps as one action,
+                 or decides something from another feature's data. Services, no BuildContext.
+                 Omit the folder otherwise.
+  presentation/  <name>_page.dart pages (ConsumerWidget composing small widgets),
+                 controllers/ (Riverpod notifiers + combined providers),
+                 models/ (UI-only state), validators/, widgets/, routes.dart.
 
-Rules:
-- Dependency direction: presentation -> application -> domain <- data. Domain imports nothing else.
-- Repositories throw typed AppException subclasses (lib/core/errors). Application layer
-  surfaces them via AsyncValue.error; presentation shows a SnackBar / error widget.
-- All DB writes that change goal status go through Postgres RPC functions (never direct UPDATE).
-- Times: store timestamptz in UTC; compute periods in the device's LOCAL time. MVP assumes the
-  whole group shares one timezone. Weeks start Monday (ISO).
-- A goal's deadline = the last instant of its period (period end minus 1 ms).
-- A goal belongs to the period that contains its deadline.
-- Keep files small; one widget/class per file where reasonable. Add unit tests for pure logic.
-- After generating code, list every file created/changed and the exact commands to run
-  (e.g. dart run build_runner build -d, supabase migration up).
+Shared code in lib/core/:
+  constants/     theme, environment.dart (local Supabase URL + anon key; 10.0.2.2 on Android)
+  database/      table/column/RPC name constants (GoalsTable.deadline, Rpc.verifyGoalComplete).
+                 Repositories never use string literals for table or column names.
+  domain/        types shared by several features: Member, GoalType, Period
+  routing/       go_router.dart, app_routes.dart (AppRoutes paths + publicRoutes),
+                 routing_interfaces.dart (ParamAppRoute, SimpleAppRoute)
+  utils/         providers.dart (supabaseProvider, clockProvider), app_exception.dart,
+                 extensions, toasts
+  widgets/       shared buttons, sheets, empty/error/loading widgets
+
+Conventions:
+- Never call Supabase.instance or DateTime.now() in features: use supabaseProvider and
+  clockProvider.
+- Writes: single call -> widget/notifier calls the repository directly; multi-step or
+  cross-feature -> the service. Afterwards ref.invalidate every provider showing old data.
+- Repositories throw AppException subclasses (core/utils/app_exception.dart); widgets
+  handle AsyncValue with .when(data, loading, error).
+- Never edit *.g.dart / *.freezed.dart. Regenerate with
+  dart run build_runner build --delete-conflicting-outputs
+- Times: timestamptz stored UTC; entities convert to local in fromJson; commands convert to
+  UTC in toJson. Periods computed in local time; weeks start Monday; one timezone per group.
+- A goal's deadline = last instant of its period (period end minus 1 ms). A goal belongs to
+  the period containing its deadline.
+- All goal status changes go through Postgres RPCs (no client UPDATE on goals).
+- After generating code, list every file created/changed and the exact commands to run.
 
 Data model (Postgres):
   members(id uuid PK = auth.users.id, name text, group_id uuid NULL FK groups)
