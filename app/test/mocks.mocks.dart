@@ -4,16 +4,19 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i6;
+import 'dart:async' as _i7;
 
 import 'package:app/core/domain/domain.dart' as _i2;
-import 'package:app/features/auth/data/auth_repository.dart' as _i5;
-import 'package:app/features/auth/data/member_repository.dart' as _i7;
-import 'package:app/features/groups/data/groups_repository.dart' as _i8;
+import 'package:app/features/auth/data/auth_repository.dart' as _i6;
+import 'package:app/features/auth/data/member_repository.dart' as _i8;
+import 'package:app/features/goals/data/goals_repository.dart' as _i10;
+import 'package:app/features/goals/data/models.dart' as _i11;
+import 'package:app/features/goals/domain/goal.dart' as _i4;
+import 'package:app/features/groups/data/groups_repository.dart' as _i9;
 import 'package:app/features/groups/domain/group.dart' as _i3;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i9;
-import 'package:supabase/supabase.dart' as _i4;
+import 'package:mockito/src/dummies.dart' as _i12;
+import 'package:supabase/supabase.dart' as _i5;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -41,72 +44,77 @@ class _FakeGroup_1 extends _i1.SmartFake implements _i3.Group {
     : super(parent, parentInvocation);
 }
 
-class _FakeFunctionsClient_2 extends _i1.SmartFake
-    implements _i4.FunctionsClient {
-  _FakeFunctionsClient_2(Object parent, Invocation parentInvocation)
+class _FakeGoal_2 extends _i1.SmartFake implements _i4.Goal {
+  _FakeGoal_2(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeSupabaseStorageClient_3 extends _i1.SmartFake
-    implements _i4.SupabaseStorageClient {
-  _FakeSupabaseStorageClient_3(Object parent, Invocation parentInvocation)
+class _FakeFunctionsClient_3 extends _i1.SmartFake
+    implements _i5.FunctionsClient {
+  _FakeFunctionsClient_3(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeRealtimeClient_4 extends _i1.SmartFake
-    implements _i4.RealtimeClient {
-  _FakeRealtimeClient_4(Object parent, Invocation parentInvocation)
+class _FakeSupabaseStorageClient_4 extends _i1.SmartFake
+    implements _i5.SupabaseStorageClient {
+  _FakeSupabaseStorageClient_4(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakePostgrestClient_5 extends _i1.SmartFake
-    implements _i4.PostgrestClient {
-  _FakePostgrestClient_5(Object parent, Invocation parentInvocation)
+class _FakeRealtimeClient_5 extends _i1.SmartFake
+    implements _i5.RealtimeClient {
+  _FakeRealtimeClient_5(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeGoTrueClient_6 extends _i1.SmartFake implements _i4.GoTrueClient {
-  _FakeGoTrueClient_6(Object parent, Invocation parentInvocation)
+class _FakePostgrestClient_6 extends _i1.SmartFake
+    implements _i5.PostgrestClient {
+  _FakePostgrestClient_6(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeSupabaseQueryBuilder_7 extends _i1.SmartFake
-    implements _i4.SupabaseQueryBuilder {
-  _FakeSupabaseQueryBuilder_7(Object parent, Invocation parentInvocation)
+class _FakeGoTrueClient_7 extends _i1.SmartFake implements _i5.GoTrueClient {
+  _FakeGoTrueClient_7(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeSupabaseQuerySchema_8 extends _i1.SmartFake
-    implements _i4.SupabaseQuerySchema {
-  _FakeSupabaseQuerySchema_8(Object parent, Invocation parentInvocation)
+class _FakeSupabaseQueryBuilder_8 extends _i1.SmartFake
+    implements _i5.SupabaseQueryBuilder {
+  _FakeSupabaseQueryBuilder_8(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakePostgrestFilterBuilder_9<T1> extends _i1.SmartFake
-    implements _i4.PostgrestFilterBuilder<T1> {
-  _FakePostgrestFilterBuilder_9(Object parent, Invocation parentInvocation)
+class _FakeSupabaseQuerySchema_9 extends _i1.SmartFake
+    implements _i5.SupabaseQuerySchema {
+  _FakeSupabaseQuerySchema_9(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeRealtimeChannel_10 extends _i1.SmartFake
-    implements _i4.RealtimeChannel {
-  _FakeRealtimeChannel_10(Object parent, Invocation parentInvocation)
+class _FakePostgrestFilterBuilder_10<T1> extends _i1.SmartFake
+    implements _i5.PostgrestFilterBuilder<T1> {
+  _FakePostgrestFilterBuilder_10(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeRealtimeChannel_11 extends _i1.SmartFake
+    implements _i5.RealtimeChannel {
+  _FakeRealtimeChannel_11(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
 /// A class which mocks [AuthRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockAuthRepository extends _i1.Mock implements _i5.AuthRepository {
+class MockAuthRepository extends _i1.Mock implements _i6.AuthRepository {
   @override
-  _i6.Stream<_i4.AuthState> authStateChanges() => (super.noSuchMethod(
+  _i7.Stream<_i5.AuthState> authStateChanges() => (super.noSuchMethod(
     Invocation.method(#authStateChanges, []),
-    returnValue: _i6.Stream<_i4.AuthState>.empty(),
-    returnValueForMissingStub: _i6.Stream<_i4.AuthState>.empty(),
-  ) as _i6.Stream<_i4.AuthState>);
+    returnValue: _i7.Stream<_i5.AuthState>.empty(),
+    returnValueForMissingStub: _i7.Stream<_i5.AuthState>.empty(),
+  ) as _i7.Stream<_i5.AuthState>);
 
   @override
-  _i6.Future<void> signUp({
+  _i7.Future<void> signUp({
     required String? name,
     required String? email,
     required String? password,
@@ -116,138 +124,202 @@ class MockAuthRepository extends _i1.Mock implements _i5.AuthRepository {
       #email: email,
       #password: password,
     }),
-    returnValue: _i6.Future<void>.value(),
-    returnValueForMissingStub: _i6.Future<void>.value(),
-  ) as _i6.Future<void>);
+    returnValue: _i7.Future<void>.value(),
+    returnValueForMissingStub: _i7.Future<void>.value(),
+  ) as _i7.Future<void>);
 
   @override
-  _i6.Future<void> signIn({
+  _i7.Future<void> signIn({
     required String? email,
     required String? password,
   }) => (super.noSuchMethod(
     Invocation.method(#signIn, [], {#email: email, #password: password}),
-    returnValue: _i6.Future<void>.value(),
-    returnValueForMissingStub: _i6.Future<void>.value(),
-  ) as _i6.Future<void>);
+    returnValue: _i7.Future<void>.value(),
+    returnValueForMissingStub: _i7.Future<void>.value(),
+  ) as _i7.Future<void>);
 
   @override
-  _i6.Future<void> signOut() => (super.noSuchMethod(
+  _i7.Future<void> signOut() => (super.noSuchMethod(
     Invocation.method(#signOut, []),
-    returnValue: _i6.Future<void>.value(),
-    returnValueForMissingStub: _i6.Future<void>.value(),
-  ) as _i6.Future<void>);
+    returnValue: _i7.Future<void>.value(),
+    returnValueForMissingStub: _i7.Future<void>.value(),
+  ) as _i7.Future<void>);
 }
 
 /// A class which mocks [MemberRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockMemberRepository extends _i1.Mock implements _i7.MemberRepository {
+class MockMemberRepository extends _i1.Mock implements _i8.MemberRepository {
   @override
-  _i6.Future<_i2.Member> fetchMember(String? id) => (super.noSuchMethod(
+  _i7.Future<_i2.Member> fetchMember(String? id) => (super.noSuchMethod(
     Invocation.method(#fetchMember, [id]),
-    returnValue: _i6.Future<_i2.Member>.value(
+    returnValue: _i7.Future<_i2.Member>.value(
       _FakeMember_0(this, Invocation.method(#fetchMember, [id])),
     ),
-    returnValueForMissingStub: _i6.Future<_i2.Member>.value(
+    returnValueForMissingStub: _i7.Future<_i2.Member>.value(
       _FakeMember_0(this, Invocation.method(#fetchMember, [id])),
     ),
-  ) as _i6.Future<_i2.Member>);
+  ) as _i7.Future<_i2.Member>);
 }
 
 /// A class which mocks [GroupsRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockGroupsRepository extends _i1.Mock implements _i8.GroupsRepository {
+class MockGroupsRepository extends _i1.Mock implements _i9.GroupsRepository {
   @override
-  _i6.Future<_i3.Group> createGroup(String? name) => (super.noSuchMethod(
+  _i7.Future<_i3.Group> createGroup(String? name) => (super.noSuchMethod(
     Invocation.method(#createGroup, [name]),
-    returnValue: _i6.Future<_i3.Group>.value(
+    returnValue: _i7.Future<_i3.Group>.value(
       _FakeGroup_1(this, Invocation.method(#createGroup, [name])),
     ),
-    returnValueForMissingStub: _i6.Future<_i3.Group>.value(
+    returnValueForMissingStub: _i7.Future<_i3.Group>.value(
       _FakeGroup_1(this, Invocation.method(#createGroup, [name])),
     ),
-  ) as _i6.Future<_i3.Group>);
+  ) as _i7.Future<_i3.Group>);
 
   @override
-  _i6.Future<_i3.Group> joinGroup(String? groupId) => (super.noSuchMethod(
+  _i7.Future<_i3.Group> joinGroup(String? groupId) => (super.noSuchMethod(
     Invocation.method(#joinGroup, [groupId]),
-    returnValue: _i6.Future<_i3.Group>.value(
+    returnValue: _i7.Future<_i3.Group>.value(
       _FakeGroup_1(this, Invocation.method(#joinGroup, [groupId])),
     ),
-    returnValueForMissingStub: _i6.Future<_i3.Group>.value(
+    returnValueForMissingStub: _i7.Future<_i3.Group>.value(
       _FakeGroup_1(this, Invocation.method(#joinGroup, [groupId])),
     ),
-  ) as _i6.Future<_i3.Group>);
+  ) as _i7.Future<_i3.Group>);
 
   @override
-  _i6.Future<_i3.Group> fetchGroup(String? id) => (super.noSuchMethod(
+  _i7.Future<_i3.Group> fetchGroup(String? id) => (super.noSuchMethod(
     Invocation.method(#fetchGroup, [id]),
-    returnValue: _i6.Future<_i3.Group>.value(
+    returnValue: _i7.Future<_i3.Group>.value(
       _FakeGroup_1(this, Invocation.method(#fetchGroup, [id])),
     ),
-    returnValueForMissingStub: _i6.Future<_i3.Group>.value(
+    returnValueForMissingStub: _i7.Future<_i3.Group>.value(
       _FakeGroup_1(this, Invocation.method(#fetchGroup, [id])),
     ),
-  ) as _i6.Future<_i3.Group>);
+  ) as _i7.Future<_i3.Group>);
 
   @override
-  _i6.Future<List<_i2.Member>> fetchMembers(String? groupId) =>
+  _i7.Future<List<_i2.Member>> fetchMembers(String? groupId) =>
       (super.noSuchMethod(
         Invocation.method(#fetchMembers, [groupId]),
-        returnValue: _i6.Future<List<_i2.Member>>.value(<_i2.Member>[]),
-        returnValueForMissingStub: _i6.Future<List<_i2.Member>>.value(
+        returnValue: _i7.Future<List<_i2.Member>>.value(<_i2.Member>[]),
+        returnValueForMissingStub: _i7.Future<List<_i2.Member>>.value(
           <_i2.Member>[],
         ),
-      ) as _i6.Future<List<_i2.Member>>);
+      ) as _i7.Future<List<_i2.Member>>);
+}
+
+/// A class which mocks [GoalsRepository].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockGoalsRepository extends _i1.Mock implements _i10.GoalsRepository {
+  @override
+  _i7.Future<List<_i4.Goal>> fetchGoals({
+    required String? ownerId,
+    required _i2.Period? period,
+  }) => (super.noSuchMethod(
+    Invocation.method(#fetchGoals, [], {#ownerId: ownerId, #period: period}),
+    returnValue: _i7.Future<List<_i4.Goal>>.value(<_i4.Goal>[]),
+    returnValueForMissingStub: _i7.Future<List<_i4.Goal>>.value(<_i4.Goal>[]),
+  ) as _i7.Future<List<_i4.Goal>>);
+
+  @override
+  _i7.Future<List<_i4.Goal>> fetchGoalsBefore({
+    required String? ownerId,
+    required _i2.GoalType? type,
+    required DateTime? before,
+  }) => (super.noSuchMethod(
+    Invocation.method(#fetchGoalsBefore, [], {
+      #ownerId: ownerId,
+      #type: type,
+      #before: before,
+    }),
+    returnValue: _i7.Future<List<_i4.Goal>>.value(<_i4.Goal>[]),
+    returnValueForMissingStub: _i7.Future<List<_i4.Goal>>.value(<_i4.Goal>[]),
+  ) as _i7.Future<List<_i4.Goal>>);
+
+  @override
+  _i7.Future<_i4.Goal> createGoal(_i11.CreateGoalCommand? command) =>
+      (super.noSuchMethod(
+        Invocation.method(#createGoal, [command]),
+        returnValue: _i7.Future<_i4.Goal>.value(
+          _FakeGoal_2(this, Invocation.method(#createGoal, [command])),
+        ),
+        returnValueForMissingStub: _i7.Future<_i4.Goal>.value(
+          _FakeGoal_2(this, Invocation.method(#createGoal, [command])),
+        ),
+      ) as _i7.Future<_i4.Goal>);
+
+  @override
+  _i7.Future<_i4.Goal> verifyComplete(String? goalId) => (super.noSuchMethod(
+    Invocation.method(#verifyComplete, [goalId]),
+    returnValue: _i7.Future<_i4.Goal>.value(
+      _FakeGoal_2(this, Invocation.method(#verifyComplete, [goalId])),
+    ),
+    returnValueForMissingStub: _i7.Future<_i4.Goal>.value(
+      _FakeGoal_2(this, Invocation.method(#verifyComplete, [goalId])),
+    ),
+  ) as _i7.Future<_i4.Goal>);
+
+  @override
+  _i7.Future<_i4.Goal> markMissed(String? goalId) => (super.noSuchMethod(
+    Invocation.method(#markMissed, [goalId]),
+    returnValue: _i7.Future<_i4.Goal>.value(
+      _FakeGoal_2(this, Invocation.method(#markMissed, [goalId])),
+    ),
+    returnValueForMissingStub: _i7.Future<_i4.Goal>.value(
+      _FakeGoal_2(this, Invocation.method(#markMissed, [goalId])),
+    ),
+  ) as _i7.Future<_i4.Goal>);
 }
 
 /// A class which mocks [SupabaseClient].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSupabaseClient extends _i1.Mock implements _i4.SupabaseClient {
+class MockSupabaseClient extends _i1.Mock implements _i5.SupabaseClient {
   @override
-  _i4.FunctionsClient get functions => (super.noSuchMethod(
+  _i5.FunctionsClient get functions => (super.noSuchMethod(
     Invocation.getter(#functions),
-    returnValue: _FakeFunctionsClient_2(this, Invocation.getter(#functions)),
-    returnValueForMissingStub: _FakeFunctionsClient_2(
+    returnValue: _FakeFunctionsClient_3(this, Invocation.getter(#functions)),
+    returnValueForMissingStub: _FakeFunctionsClient_3(
       this,
       Invocation.getter(#functions),
     ),
-  ) as _i4.FunctionsClient);
+  ) as _i5.FunctionsClient);
 
   @override
-  _i4.SupabaseStorageClient get storage => (super.noSuchMethod(
+  _i5.SupabaseStorageClient get storage => (super.noSuchMethod(
     Invocation.getter(#storage),
-    returnValue: _FakeSupabaseStorageClient_3(
+    returnValue: _FakeSupabaseStorageClient_4(
       this,
       Invocation.getter(#storage),
     ),
-    returnValueForMissingStub: _FakeSupabaseStorageClient_3(
+    returnValueForMissingStub: _FakeSupabaseStorageClient_4(
       this,
       Invocation.getter(#storage),
     ),
-  ) as _i4.SupabaseStorageClient);
+  ) as _i5.SupabaseStorageClient);
 
   @override
-  _i4.RealtimeClient get realtime => (super.noSuchMethod(
+  _i5.RealtimeClient get realtime => (super.noSuchMethod(
     Invocation.getter(#realtime),
-    returnValue: _FakeRealtimeClient_4(this, Invocation.getter(#realtime)),
-    returnValueForMissingStub: _FakeRealtimeClient_4(
+    returnValue: _FakeRealtimeClient_5(this, Invocation.getter(#realtime)),
+    returnValueForMissingStub: _FakeRealtimeClient_5(
       this,
       Invocation.getter(#realtime),
     ),
-  ) as _i4.RealtimeClient);
+  ) as _i5.RealtimeClient);
 
   @override
-  _i4.PostgrestClient get rest => (super.noSuchMethod(
+  _i5.PostgrestClient get rest => (super.noSuchMethod(
     Invocation.getter(#rest),
-    returnValue: _FakePostgrestClient_5(this, Invocation.getter(#rest)),
-    returnValueForMissingStub: _FakePostgrestClient_5(
+    returnValue: _FakePostgrestClient_6(this, Invocation.getter(#rest)),
+    returnValueForMissingStub: _FakePostgrestClient_6(
       this,
       Invocation.getter(#rest),
     ),
-  ) as _i4.PostgrestClient);
+  ) as _i5.PostgrestClient);
 
   @override
   Map<String, String> get headers => (super.noSuchMethod(
@@ -257,35 +329,35 @@ class MockSupabaseClient extends _i1.Mock implements _i4.SupabaseClient {
   ) as Map<String, String>);
 
   @override
-  _i4.GoTrueClient get auth => (super.noSuchMethod(
+  _i5.GoTrueClient get auth => (super.noSuchMethod(
     Invocation.getter(#auth),
-    returnValue: _FakeGoTrueClient_6(this, Invocation.getter(#auth)),
-    returnValueForMissingStub: _FakeGoTrueClient_6(
+    returnValue: _FakeGoTrueClient_7(this, Invocation.getter(#auth)),
+    returnValueForMissingStub: _FakeGoTrueClient_7(
       this,
       Invocation.getter(#auth),
     ),
-  ) as _i4.GoTrueClient);
+  ) as _i5.GoTrueClient);
 
   @override
-  set functions(_i4.FunctionsClient? value) => super.noSuchMethod(
+  set functions(_i5.FunctionsClient? value) => super.noSuchMethod(
     Invocation.setter(#functions, value),
     returnValueForMissingStub: null,
   );
 
   @override
-  set storage(_i4.SupabaseStorageClient? value) => super.noSuchMethod(
+  set storage(_i5.SupabaseStorageClient? value) => super.noSuchMethod(
     Invocation.setter(#storage, value),
     returnValueForMissingStub: null,
   );
 
   @override
-  set realtime(_i4.RealtimeClient? value) => super.noSuchMethod(
+  set realtime(_i5.RealtimeClient? value) => super.noSuchMethod(
     Invocation.setter(#realtime, value),
     returnValueForMissingStub: null,
   );
 
   @override
-  set rest(_i4.PostgrestClient? value) => super.noSuchMethod(
+  set rest(_i5.PostgrestClient? value) => super.noSuchMethod(
     Invocation.setter(#rest, value),
     returnValueForMissingStub: null,
   );
@@ -297,100 +369,100 @@ class MockSupabaseClient extends _i1.Mock implements _i4.SupabaseClient {
   );
 
   @override
-  _i4.SupabaseQueryBuilder from(String? table) => (super.noSuchMethod(
+  _i5.SupabaseQueryBuilder from(String? table) => (super.noSuchMethod(
     Invocation.method(#from, [table]),
-    returnValue: _FakeSupabaseQueryBuilder_7(
+    returnValue: _FakeSupabaseQueryBuilder_8(
       this,
       Invocation.method(#from, [table]),
     ),
-    returnValueForMissingStub: _FakeSupabaseQueryBuilder_7(
+    returnValueForMissingStub: _FakeSupabaseQueryBuilder_8(
       this,
       Invocation.method(#from, [table]),
     ),
-  ) as _i4.SupabaseQueryBuilder);
+  ) as _i5.SupabaseQueryBuilder);
 
   @override
-  _i4.SupabaseQuerySchema schema(String? schema) => (super.noSuchMethod(
+  _i5.SupabaseQuerySchema schema(String? schema) => (super.noSuchMethod(
     Invocation.method(#schema, [schema]),
-    returnValue: _FakeSupabaseQuerySchema_8(
+    returnValue: _FakeSupabaseQuerySchema_9(
       this,
       Invocation.method(#schema, [schema]),
     ),
-    returnValueForMissingStub: _FakeSupabaseQuerySchema_8(
+    returnValueForMissingStub: _FakeSupabaseQuerySchema_9(
       this,
       Invocation.method(#schema, [schema]),
     ),
-  ) as _i4.SupabaseQuerySchema);
+  ) as _i5.SupabaseQuerySchema);
 
   @override
-  _i4.PostgrestFilterBuilder<T> rpc<T>(
+  _i5.PostgrestFilterBuilder<T> rpc<T>(
     String? fn, {
     Map<String, dynamic>? params,
     dynamic get = false,
   }) => (super.noSuchMethod(
     Invocation.method(#rpc, [fn], {#params: params, #get: get}),
-    returnValue: _FakePostgrestFilterBuilder_9<T>(
+    returnValue: _FakePostgrestFilterBuilder_10<T>(
       this,
       Invocation.method(#rpc, [fn], {#params: params, #get: get}),
     ),
-    returnValueForMissingStub: _FakePostgrestFilterBuilder_9<T>(
+    returnValueForMissingStub: _FakePostgrestFilterBuilder_10<T>(
       this,
       Invocation.method(#rpc, [fn], {#params: params, #get: get}),
     ),
-  ) as _i4.PostgrestFilterBuilder<T>);
+  ) as _i5.PostgrestFilterBuilder<T>);
 
   @override
-  _i4.RealtimeChannel channel(
+  _i5.RealtimeChannel channel(
     String? name, {
-    _i4.RealtimeChannelConfig? opts = const _i4.RealtimeChannelConfig(),
+    _i5.RealtimeChannelConfig? opts = const _i5.RealtimeChannelConfig(),
   }) => (super.noSuchMethod(
     Invocation.method(#channel, [name], {#opts: opts}),
-    returnValue: _FakeRealtimeChannel_10(
+    returnValue: _FakeRealtimeChannel_11(
       this,
       Invocation.method(#channel, [name], {#opts: opts}),
     ),
-    returnValueForMissingStub: _FakeRealtimeChannel_10(
+    returnValueForMissingStub: _FakeRealtimeChannel_11(
       this,
       Invocation.method(#channel, [name], {#opts: opts}),
     ),
-  ) as _i4.RealtimeChannel);
+  ) as _i5.RealtimeChannel);
 
   @override
-  List<_i4.RealtimeChannel> getChannels() => (super.noSuchMethod(
+  List<_i5.RealtimeChannel> getChannels() => (super.noSuchMethod(
     Invocation.method(#getChannels, []),
-    returnValue: <_i4.RealtimeChannel>[],
-    returnValueForMissingStub: <_i4.RealtimeChannel>[],
-  ) as List<_i4.RealtimeChannel>);
+    returnValue: <_i5.RealtimeChannel>[],
+    returnValueForMissingStub: <_i5.RealtimeChannel>[],
+  ) as List<_i5.RealtimeChannel>);
 
   @override
-  _i6.Future<String> removeChannel(_i4.RealtimeChannel? channel) =>
+  _i7.Future<String> removeChannel(_i5.RealtimeChannel? channel) =>
       (super.noSuchMethod(
         Invocation.method(#removeChannel, [channel]),
-        returnValue: _i6.Future<String>.value(
-          _i9.dummyValue<String>(
+        returnValue: _i7.Future<String>.value(
+          _i12.dummyValue<String>(
             this,
             Invocation.method(#removeChannel, [channel]),
           ),
         ),
-        returnValueForMissingStub: _i6.Future<String>.value(
-          _i9.dummyValue<String>(
+        returnValueForMissingStub: _i7.Future<String>.value(
+          _i12.dummyValue<String>(
             this,
             Invocation.method(#removeChannel, [channel]),
           ),
         ),
-      ) as _i6.Future<String>);
+      ) as _i7.Future<String>);
 
   @override
-  _i6.Future<List<String>> removeAllChannels() => (super.noSuchMethod(
+  _i7.Future<List<String>> removeAllChannels() => (super.noSuchMethod(
     Invocation.method(#removeAllChannels, []),
-    returnValue: _i6.Future<List<String>>.value(<String>[]),
-    returnValueForMissingStub: _i6.Future<List<String>>.value(<String>[]),
-  ) as _i6.Future<List<String>>);
+    returnValue: _i7.Future<List<String>>.value(<String>[]),
+    returnValueForMissingStub: _i7.Future<List<String>>.value(<String>[]),
+  ) as _i7.Future<List<String>>);
 
   @override
-  _i6.Future<void> dispose() => (super.noSuchMethod(
+  _i7.Future<void> dispose() => (super.noSuchMethod(
     Invocation.method(#dispose, []),
-    returnValue: _i6.Future<void>.value(),
-    returnValueForMissingStub: _i6.Future<void>.value(),
-  ) as _i6.Future<void>);
+    returnValue: _i7.Future<void>.value(),
+    returnValueForMissingStub: _i7.Future<void>.value(),
+  ) as _i7.Future<void>);
 }

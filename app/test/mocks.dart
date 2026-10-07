@@ -1,5 +1,6 @@
 import 'package:app/features/auth/data/auth_repository.dart';
 import 'package:app/features/auth/data/member_repository.dart';
+import 'package:app/features/goals/data/goals_repository.dart';
 import 'package:app/features/groups/data/groups_repository.dart';
 import 'package:mockito/annotations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -13,6 +14,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
   MockSpec<AuthRepository>(),
   MockSpec<MemberRepository>(),
   MockSpec<GroupsRepository>(),
+  MockSpec<GoalsRepository>(),
   MockSpec<SupabaseClient>(),
 ])
 export 'mocks.mocks.dart';

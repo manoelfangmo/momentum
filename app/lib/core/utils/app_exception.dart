@@ -26,8 +26,15 @@ final class NotFoundException extends AppException {
   const NotFoundException();
 }
 
+/// The caller is not allowed to do this. [message] says why when the rule is
+/// one the member can act on, such as needing someone else to verify a goal.
 final class PermissionException extends AppException {
-  const PermissionException();
+  const PermissionException([this.message = 'You are not allowed to do that.']);
+
+  final String message;
+
+  @override
+  String toString() => 'PermissionException: $message';
 }
 
 final class ValidationException extends AppException {

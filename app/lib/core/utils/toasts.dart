@@ -36,6 +36,6 @@ String _messageFor(Object error) => switch (error) {
   ValidationException(:final message) => message,
   NetworkException() => 'No connection. Check your network and try again.',
   NotFoundException() => 'We could not find that.',
-  PermissionException() => 'You are not allowed to do that.',
+  PermissionException(:final message) => message,
   _ => _fallbackMessage,
 };
