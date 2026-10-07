@@ -65,7 +65,9 @@ class _TabBody extends ConsumerWidget {
   Widget _list() {
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      // Deep at the bottom so the new goal button does not sit on the last
+      // tile.
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
       itemCount: tab.goals.length,
       itemBuilder: (context, index) => GoalTile(goal: tab.goals[index]),
     );

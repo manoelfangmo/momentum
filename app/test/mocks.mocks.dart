@@ -9,13 +9,14 @@ import 'dart:async' as _i7;
 import 'package:app/core/domain/domain.dart' as _i2;
 import 'package:app/features/auth/data/auth_repository.dart' as _i6;
 import 'package:app/features/auth/data/member_repository.dart' as _i8;
+import 'package:app/features/goals/application/goal_service.dart' as _i12;
 import 'package:app/features/goals/data/goals_repository.dart' as _i10;
 import 'package:app/features/goals/data/models.dart' as _i11;
 import 'package:app/features/goals/domain/goal.dart' as _i4;
 import 'package:app/features/groups/data/groups_repository.dart' as _i9;
 import 'package:app/features/groups/domain/group.dart' as _i3;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i12;
+import 'package:mockito/src/dummies.dart' as _i13;
 import 'package:supabase/supabase.dart' as _i5;
 
 // ignore_for_file: type=lint
@@ -274,6 +275,31 @@ class MockGoalsRepository extends _i1.Mock implements _i10.GoalsRepository {
   ) as _i7.Future<_i4.Goal>);
 }
 
+/// A class which mocks [GoalService].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockGoalService extends _i1.Mock implements _i12.GoalService {
+  @override
+  _i7.Future<_i4.Goal> createGoal({
+    required String? title,
+    required _i2.GoalType? type,
+  }) => (super.noSuchMethod(
+    Invocation.method(#createGoal, [], {#title: title, #type: type}),
+    returnValue: _i7.Future<_i4.Goal>.value(
+      _FakeGoal_2(
+        this,
+        Invocation.method(#createGoal, [], {#title: title, #type: type}),
+      ),
+    ),
+    returnValueForMissingStub: _i7.Future<_i4.Goal>.value(
+      _FakeGoal_2(
+        this,
+        Invocation.method(#createGoal, [], {#title: title, #type: type}),
+      ),
+    ),
+  ) as _i7.Future<_i4.Goal>);
+}
+
 /// A class which mocks [SupabaseClient].
 ///
 /// See the documentation for Mockito's code generation for more information.
@@ -439,13 +465,13 @@ class MockSupabaseClient extends _i1.Mock implements _i5.SupabaseClient {
       (super.noSuchMethod(
         Invocation.method(#removeChannel, [channel]),
         returnValue: _i7.Future<String>.value(
-          _i12.dummyValue<String>(
+          _i13.dummyValue<String>(
             this,
             Invocation.method(#removeChannel, [channel]),
           ),
         ),
         returnValueForMissingStub: _i7.Future<String>.value(
-          _i12.dummyValue<String>(
+          _i13.dummyValue<String>(
             this,
             Invocation.method(#removeChannel, [channel]),
           ),
