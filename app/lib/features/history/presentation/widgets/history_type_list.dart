@@ -37,7 +37,7 @@ class HistoryTypeList extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
         for (final section in sections) ...[
-          HistoryPeriodHeader(period: section.period),
+          HistoryPeriodHeader(period: section.period, goals: section.goals),
           for (final goal in section.goals) GoalTile(goal: goal),
         ],
       ],

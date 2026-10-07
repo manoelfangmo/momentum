@@ -22,14 +22,14 @@ const _grace = Member(id: 'user-2', name: 'Grace', groupId: 'group-1');
 final _now = DateTime(2026, 10, 7, 9);
 final _today = Period.containing(_now, GoalType.daily);
 
-Goal goalCalled(String title) => Goal(
+Goal goalCalled(String title, {GoalStatus status = GoalStatus.pending}) => Goal(
   id: 'goal-$title',
   ownerId: 'user-1',
   groupId: 'group-1',
   title: title,
   type: _today.type,
   deadline: _today.deadline,
-  status: GoalStatus.pending,
+  status: status,
   createdAt: _today.start,
 );
 
@@ -67,15 +67,23 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('heads the list with the period and whose goals', (tester) async {
-    when(goals.fetchGoals(ownerId: 'user-1', period: _today))
-        .thenAnswer((_) async => [goalCalled('Run 5k'), goalCalled('Read')]);
+  testWidgets('heads the list with the period, whose goals and the rate', (
+    tester,
+  ) async {
+    when(goals.fetchGoals(ownerId: 'user-1', period: _today)).thenAnswer(
+      (_) async => [
+        goalCalled('Run 5k', status: GoalStatus.complete),
+        goalCalled('Read', status: GoalStatus.complete),
+        goalCalled('Stretch'),
+      ],
+    );
 
     await pumpTab(tester);
 
     expect(find.text('Wed, Oct 7'), findsOneWidget);
     expect(find.text('Your goals'), findsOneWidget);
-    expect(find.byType(GoalTile), findsNWidgets(2));
+    expect(find.text('2/3 · 67%'), findsOneWidget);
+    expect(find.byType(GoalTile), findsNWidgets(3));
   });
 
   testWidgets('names the member when it is not you', (tester) async {
@@ -95,6 +103,7 @@ void main() {
     await pumpTab(tester);
 
     expect(find.text('No goals for this period yet.'), findsOneWidget);
+    expect(find.text('—'), findsOneWidget);
     expect(find.byType(GoalTile), findsNothing);
   });
 

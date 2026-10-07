@@ -89,6 +89,7 @@ void main() {
     expect(find.byType(HistoryPeriodHeader), findsNWidgets(2));
     expect(find.text('Mon, Oct 5'), findsOneWidget);
     expect(find.text('Tue, Oct 6'), findsOneWidget);
+    expect(find.text('0/1 · 0%'), findsNWidgets(2));
     expect(find.byType(GoalTile), findsNWidgets(2));
     expect(find.text('Run 5k'), findsOneWidget);
     expect(find.text('Read'), findsOneWidget);
@@ -114,6 +115,30 @@ void main() {
     expect(find.text('Verify'), findsNothing);
   });
 
+  testWidgets("a period header shows that period's completion rate", (
+    tester,
+  ) async {
+    when(
+      goals.fetchGoalsBefore(
+        ownerId: 'user-1',
+        type: GoalType.daily,
+        before: _today.start,
+      ),
+    ).thenAnswer(
+      (_) async => [
+        goalCalled('Run 5k', _yesterday, status: GoalStatus.complete),
+        goalCalled('Read', _yesterday, status: GoalStatus.complete),
+        goalCalled('Stretch', _yesterday),
+      ],
+    );
+
+    await pumpList(tester);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tue, Oct 6'), findsOneWidget);
+    expect(find.text('2/3 · 67%'), findsOneWidget);
+  });
+
   testWidgets('complete and missed goals still show under their period', (
     tester,
   ) async {
@@ -135,6 +160,8 @@ void main() {
 
     expect(find.text('Complete'), findsOneWidget);
     expect(find.text('Missed'), findsOneWidget);
+    expect(find.text('1/1 · 100%'), findsOneWidget);
+    expect(find.text('0/1 · 0%'), findsOneWidget);
     expect(find.widgetWithText(TextButton, 'Missed'), findsNothing);
   });
 

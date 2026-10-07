@@ -7,6 +7,8 @@ import 'package:app/features/goals/presentation/models/goal_tab_data.dart';
 import 'package:app/features/goals/presentation/widgets/day_selector.dart';
 import 'package:app/features/goals/presentation/widgets/goal_tile.dart';
 import 'package:app/features/groups/data/groups_repository.dart';
+import 'package:app/features/stats/domain/compute_completion.dart';
+import 'package:app/features/stats/presentation/widgets/completion_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -108,7 +110,8 @@ class _TabHeader extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           _OwnerLabel(memberId: tab.memberId),
-          // T14 adds this period's completion stats here.
+          const SizedBox(height: 6),
+          CompletionBadge(completionFor(tab.goals)),
         ],
       ),
     );
