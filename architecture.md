@@ -229,13 +229,51 @@ GoalsRepository goalsRepository(Ref ref) {
 
 `clockProvider` in the same file returns the current time. Anything that asks "what period is it now" reads `clockProvider`, never `DateTime.now()`, so tests can freeze time.
 
-After you add or change a `@riverpod`, `@freezed`, or `@JsonSerializable` annotation, regenerate from the project root:
+After you add or change a `@riverpod`, `@freezed`, `@JsonSerializable`, or `@GenerateNiceMocks` annotation, regenerate from the project root:
 
 ```sh
 dart run build_runner build --delete-conflicting-outputs
 ```
 
-Do not edit `*.g.dart` or `*.freezed.dart`. Change the source file and regenerate.
+Do not edit `*.g.dart`, `*.freezed.dart`, or `*.mocks.dart`. Change the source file and regenerate.
+
+## Tests
+
+Tests live in `app/test/`, mirroring `app/lib/`, and run with `flutter test`. Nothing in the suite talks to a running Supabase stack.
+
+Test doubles come from **mockito**, not from hand-written fakes. `app/test/mocks.dart` carries one annotation for the whole suite and re-exports what `build_runner` generates:
+
+```dart
+@GenerateNiceMocks([MockSpec<AuthRepository>(), MockSpec<MemberRepository>()])
+export 'mocks.mocks.dart';
+```
+
+That writes `app/test/mocks.mocks.dart` with `MockAuthRepository` and `MockMemberRepository`. When a new repository or service needs a double, add a `MockSpec` there and regenerate. Do not write a class that `implements` a repository by hand.
+
+`GenerateNiceMocks` returns a harmless default from every member you do not stub — null, an empty stream, a completed future — so a test only sets up the calls it is about. Inject the mock by overriding the provider that builds the real one:
+
+```dart
+final repository = MockAuthRepository();
+final container = ProviderContainer(
+  overrides: [authRepositoryProvider.overrideWithValue(repository)],
+);
+
+when(
+  repository.signIn(email: anyNamed('email'), password: anyNamed('password')),
+).thenThrow(const AuthException('Invalid login credentials'));
+
+await container.read(authControllerProvider.notifier).signIn(
+      email: 'ada@example.com',
+      password: 'wrong',
+    );
+
+verify(repository.signIn(email: 'ada@example.com', password: 'wrong')).called(1);
+```
+
+Two Riverpod behaviours trip people up in tests:
+
+- An async provider does not start until something listens to it. Call `container.listen(provider, (_, _) {})` before awaiting `provider.future`, and pass `onError` when the test expects a failure.
+- A provider that throws is retried ten times with a growing backoff, which outlasts the test timeout. Give `ProviderContainer` a `retry: (count, error) => null` when asserting on an error.
 
 ## Domain models
 

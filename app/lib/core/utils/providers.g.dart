@@ -8,6 +8,61 @@ part of 'providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// The one Supabase client.
+///
+/// Repositories take their client from here instead of reaching for
+/// [Supabase.instance], so a test can swap it out.
+
+@ProviderFor(supabase)
+final supabaseProvider = SupabaseProvider._();
+
+/// The one Supabase client.
+///
+/// Repositories take their client from here instead of reaching for
+/// [Supabase.instance], so a test can swap it out.
+
+final class SupabaseProvider
+    extends $FunctionalProvider<SupabaseClient, SupabaseClient, SupabaseClient>
+    with $Provider<SupabaseClient> {
+  /// The one Supabase client.
+  ///
+  /// Repositories take their client from here instead of reaching for
+  /// [Supabase.instance], so a test can swap it out.
+  SupabaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'supabaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$supabaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<SupabaseClient> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  SupabaseClient create(Ref ref) {
+    return supabase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SupabaseClient value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SupabaseClient>(value),
+    );
+  }
+}
+
+String _$supabaseHash() => r'7750c766113ae9b14a18705c73c53e2e92e2ddbd';
+
 /// Time source for period math.
 ///
 /// Features call `ref.watch(clockProvider)()` instead of [DateTime.now]
