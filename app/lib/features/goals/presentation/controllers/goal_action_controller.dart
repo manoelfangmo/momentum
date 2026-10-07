@@ -45,9 +45,9 @@ class GoalActionController extends _$GoalActionController {
     state = const AsyncData(null);
 
     // The whole family: the goal is in the tab it was tapped from, but the
-    // other tabs and History read the same provider for the same member, and
-    // a stale list somewhere else is not worth naming each key to avoid.
+    // other tabs and History read the same member's lists, and a stale row
+    // somewhere else is not worth naming each key to avoid.
     ref.invalidate(goalsForPeriodProvider);
-    // TODO(T13): ref.invalidate(historyGoalsProvider);
+    ref.invalidate(historyGoalsProvider);
   }
 }

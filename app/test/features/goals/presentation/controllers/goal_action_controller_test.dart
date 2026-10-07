@@ -90,6 +90,37 @@ void main() {
     verify(goals.fetchGoals(ownerId: 'user-1', period: _today)).called(2);
   });
 
+  test('re-reads history so a missed past goal updates there too', () async {
+    final before = _today.start;
+    when(
+      goals.fetchGoalsBefore(
+        ownerId: anyNamed('ownerId'),
+        type: anyNamed('type'),
+        before: anyNamed('before'),
+      ),
+    ).thenAnswer((_) async => []);
+    container.listen(
+      historyGoalsProvider('user-1', GoalType.daily, before),
+      (_, _) {},
+    );
+    await container.read(
+      historyGoalsProvider('user-1', GoalType.daily, before).future,
+    );
+
+    await controller(_pending.id).markMissed(_pending);
+    await container.read(
+      historyGoalsProvider('user-1', GoalType.daily, before).future,
+    );
+
+    verify(
+      goals.fetchGoalsBefore(
+        ownerId: 'user-1',
+        type: GoalType.daily,
+        before: before,
+      ),
+    ).called(2);
+  });
+
   test('is loading while the call is in flight', () async {
     final inFlight = Completer<Goal>();
     when(goals.verifyComplete(any)).thenAnswer((_) => inFlight.future);

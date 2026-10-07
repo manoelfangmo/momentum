@@ -75,7 +75,7 @@ final class GoalActionControllerProvider
 }
 
 String _$goalActionControllerHash() =>
-    r'377e9fd8a6ad5fcdf2a953c07ac82b0a4561e37e';
+    r'175e9266c3b6f004d13c871964ca4db705d610fe';
 
 /// Runs the two status changes on one goal and holds their progress.
 ///

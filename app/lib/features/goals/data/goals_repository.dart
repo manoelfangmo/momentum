@@ -161,10 +161,27 @@ GoalsRepository goalsRepository(Ref ref) =>
 
 /// One member's goals for one period.
 ///
-/// A family keyed by both arguments: [Period] has `==`/`hashCode`, so a tab
-/// and the history page asking for the same member and period share a cache.
+/// A family keyed by both arguments: [Period] has `==`/`hashCode`, so two
+/// widgets asking for the same member and period share a cache.
 @riverpod
 Future<List<Goal>> goalsForPeriod(Ref ref, String memberId, Period period) =>
     ref
         .watch(goalsRepositoryProvider)
         .fetchGoals(ownerId: memberId, period: period);
+
+/// One member's goals of [type] whose deadline is before [before].
+///
+/// History uses this for every period that has already ended: [before] is the
+/// start of the current period, so the current one stays on Goals. Load all
+/// for MVP.
+///
+/// TODO: paginate past periods instead of loading all of them.
+@riverpod
+Future<List<Goal>> historyGoals(
+  Ref ref,
+  String ownerId,
+  GoalType type,
+  DateTime before,
+) => ref
+    .watch(goalsRepositoryProvider)
+    .fetchGoalsBefore(ownerId: ownerId, type: type, before: before);

@@ -89,4 +89,73 @@ void main() {
           .called(1);
     });
   });
+
+  group('historyGoals', () {
+    final before = _today.start;
+
+    test('asks the repository for that member, type and cutoff', () async {
+      final run = goalCalled('Run 5k', _today);
+      when(
+        repository.fetchGoalsBefore(
+          ownerId: 'user-1',
+          type: GoalType.daily,
+          before: before,
+        ),
+      ).thenAnswer((_) async => [run]);
+      final history = historyGoalsProvider('user-1', GoalType.daily, before);
+      final c = container();
+      c.listen(history, (_, _) {}, onError: (_, _) {});
+
+      expect(await c.read(history.future), [run]);
+      verify(
+        repository.fetchGoalsBefore(
+          ownerId: 'user-1',
+          type: GoalType.daily,
+          before: before,
+        ),
+      ).called(1);
+    });
+
+    test('keeps one cache per member, type and cutoff', () async {
+      when(
+        repository.fetchGoalsBefore(
+          ownerId: anyNamed('ownerId'),
+          type: anyNamed('type'),
+          before: anyNamed('before'),
+        ),
+      ).thenAnswer((_) async => []);
+      final c = container();
+      final keys = [
+        historyGoalsProvider('user-1', GoalType.daily, before),
+        historyGoalsProvider('user-1', GoalType.weekly, before),
+        historyGoalsProvider('user-2', GoalType.daily, before),
+      ];
+      for (final key in keys) {
+        c.listen(key, (_, _) {}, onError: (_, _) {});
+        await c.read(key.future);
+      }
+
+      verify(
+        repository.fetchGoalsBefore(
+          ownerId: 'user-1',
+          type: GoalType.daily,
+          before: before,
+        ),
+      ).called(1);
+      verify(
+        repository.fetchGoalsBefore(
+          ownerId: 'user-1',
+          type: GoalType.weekly,
+          before: before,
+        ),
+      ).called(1);
+      verify(
+        repository.fetchGoalsBefore(
+          ownerId: 'user-2',
+          type: GoalType.daily,
+          before: before,
+        ),
+      ).called(1);
+    });
+  });
 }

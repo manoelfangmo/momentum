@@ -53,16 +53,16 @@ String _$goalsRepositoryHash() => r'f5be8a20877caf4f37ef8c2d8765ecfa05b8757f';
 
 /// One member's goals for one period.
 ///
-/// A family keyed by both arguments: [Period] has `==`/`hashCode`, so a tab
-/// and the history page asking for the same member and period share a cache.
+/// A family keyed by both arguments: [Period] has `==`/`hashCode`, so two
+/// widgets asking for the same member and period share a cache.
 
 @ProviderFor(goalsForPeriod)
 final goalsForPeriodProvider = GoalsForPeriodFamily._();
 
 /// One member's goals for one period.
 ///
-/// A family keyed by both arguments: [Period] has `==`/`hashCode`, so a tab
-/// and the history page asking for the same member and period share a cache.
+/// A family keyed by both arguments: [Period] has `==`/`hashCode`, so two
+/// widgets asking for the same member and period share a cache.
 
 final class GoalsForPeriodProvider
     extends
@@ -74,8 +74,8 @@ final class GoalsForPeriodProvider
     with $FutureModifier<List<Goal>>, $FutureProvider<List<Goal>> {
   /// One member's goals for one period.
   ///
-  /// A family keyed by both arguments: [Period] has `==`/`hashCode`, so a tab
-  /// and the history page asking for the same member and period share a cache.
+  /// A family keyed by both arguments: [Period] has `==`/`hashCode`, so two
+  /// widgets asking for the same member and period share a cache.
   GoalsForPeriodProvider._({
     required GoalsForPeriodFamily super.from,
     required (String, Period) super.argument,
@@ -123,8 +123,8 @@ String _$goalsForPeriodHash() => r'378db3c0122c8dda7e7b0cf0a907d5573fa28f4a';
 
 /// One member's goals for one period.
 ///
-/// A family keyed by both arguments: [Period] has `==`/`hashCode`, so a tab
-/// and the history page asking for the same member and period share a cache.
+/// A family keyed by both arguments: [Period] has `==`/`hashCode`, so two
+/// widgets asking for the same member and period share a cache.
 
 final class GoalsForPeriodFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<Goal>>, (String, Period)> {
@@ -139,12 +139,129 @@ final class GoalsForPeriodFamily extends $Family
 
   /// One member's goals for one period.
   ///
-  /// A family keyed by both arguments: [Period] has `==`/`hashCode`, so a tab
-  /// and the history page asking for the same member and period share a cache.
+  /// A family keyed by both arguments: [Period] has `==`/`hashCode`, so two
+  /// widgets asking for the same member and period share a cache.
 
   GoalsForPeriodProvider call(String memberId, Period period) =>
       GoalsForPeriodProvider._(argument: (memberId, period), from: this);
 
   @override
   String toString() => r'goalsForPeriodProvider';
+}
+
+/// One member's goals of [type] whose deadline is before [before].
+///
+/// History uses this for every period that has already ended: [before] is the
+/// start of the current period, so the current one stays on Goals. Load all
+/// for MVP.
+///
+/// TODO: paginate past periods instead of loading all of them.
+
+@ProviderFor(historyGoals)
+final historyGoalsProvider = HistoryGoalsFamily._();
+
+/// One member's goals of [type] whose deadline is before [before].
+///
+/// History uses this for every period that has already ended: [before] is the
+/// start of the current period, so the current one stays on Goals. Load all
+/// for MVP.
+///
+/// TODO: paginate past periods instead of loading all of them.
+
+final class HistoryGoalsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Goal>>,
+          List<Goal>,
+          FutureOr<List<Goal>>
+        >
+    with $FutureModifier<List<Goal>>, $FutureProvider<List<Goal>> {
+  /// One member's goals of [type] whose deadline is before [before].
+  ///
+  /// History uses this for every period that has already ended: [before] is the
+  /// start of the current period, so the current one stays on Goals. Load all
+  /// for MVP.
+  ///
+  /// TODO: paginate past periods instead of loading all of them.
+  HistoryGoalsProvider._({
+    required HistoryGoalsFamily super.from,
+    required (String, GoalType, DateTime) super.argument,
+  }) : super(
+         retry: null,
+         name: r'historyGoalsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$historyGoalsHash();
+
+  @override
+  String toString() {
+    return r'historyGoalsProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<List<Goal>> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<Goal>> create(Ref ref) {
+    final argument = this.argument as (String, GoalType, DateTime);
+    return historyGoals(ref, argument.$1, argument.$2, argument.$3);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is HistoryGoalsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$historyGoalsHash() => r'6b2ed94020804bbfc5c5d6293c8c84e5c6977553';
+
+/// One member's goals of [type] whose deadline is before [before].
+///
+/// History uses this for every period that has already ended: [before] is the
+/// start of the current period, so the current one stays on Goals. Load all
+/// for MVP.
+///
+/// TODO: paginate past periods instead of loading all of them.
+
+final class HistoryGoalsFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<List<Goal>>,
+          (String, GoalType, DateTime)
+        > {
+  HistoryGoalsFamily._()
+    : super(
+        retry: null,
+        name: r'historyGoalsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// One member's goals of [type] whose deadline is before [before].
+  ///
+  /// History uses this for every period that has already ended: [before] is the
+  /// start of the current period, so the current one stays on Goals. Load all
+  /// for MVP.
+  ///
+  /// TODO: paginate past periods instead of loading all of them.
+
+  HistoryGoalsProvider call(String ownerId, GoalType type, DateTime before) =>
+      HistoryGoalsProvider._(argument: (ownerId, type, before), from: this);
+
+  @override
+  String toString() => r'historyGoalsProvider';
 }

@@ -8,6 +8,7 @@ import 'package:app/core/utils/app_exception.dart';
 import 'package:app/features/auth/data/auth_repository.dart';
 import 'package:app/features/auth/data/member_repository.dart';
 import 'package:app/features/goals/presentation/goals_page.dart';
+import 'package:app/features/history/presentation/history_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // `Override`, the type of a `ProviderContainer` override, lives here rather
@@ -212,7 +213,7 @@ void main() {
       // state under it are still there, which is what keeps the tab and
       // scroll position when you come back.
       expect(find.byType(GoalsPage, skipOffstage: false), findsOneWidget);
-      expect(find.text('Finished periods will show up here.'), findsOneWidget);
+      expect(find.byType(HistoryPage), findsOneWidget);
     });
   });
 
