@@ -10,7 +10,7 @@ Stack:
   go_router, freezed + json_serializable (field_rename: snake in build.yaml), build_runner.
 
 Architecture (follow ARCHITECTURE.md exactly). Feature-first; each feature in
-lib/features/<feature>/ with these layers. Dependencies point down only:
+app/lib/features/<feature>/ with these layers. Dependencies point down only:
   presentation -> application -> data -> domain
   domain/        Freezed entities (with fromJson), value objects, sealed decisions,
                  computed facts on the entity. NO Flutter, Supabase or Riverpod imports.
@@ -26,7 +26,7 @@ lib/features/<feature>/ with these layers. Dependencies point down only:
                  controllers/ (Riverpod notifiers + combined providers),
                  models/ (UI-only state), validators/, widgets/, routes.dart.
 
-Shared code in lib/core/:
+Shared code in app/lib/core/:
   constants/     theme, environment.dart (local Supabase URL + anon key; 10.0.2.2 on Android)
   database/      table/column/RPC name constants (GoalsTable.deadline, Rpc.verifyGoalComplete).
                  Repositories never use string literals for table or column names.
