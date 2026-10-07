@@ -7,6 +7,7 @@ import 'package:app/core/routing/go_router.dart';
 import 'package:app/core/utils/app_exception.dart';
 import 'package:app/features/auth/data/auth_repository.dart';
 import 'package:app/features/auth/data/member_repository.dart';
+import 'package:app/features/goals/presentation/goals_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // `Override`, the type of a `ProviderContainer` override, lives here rather
@@ -210,10 +211,7 @@ void main() {
       // The indexed stack only takes Goals off screen. Its navigator and the
       // state under it are still there, which is what keeps the tab and
       // scroll position when you come back.
-      expect(
-        find.text('Your goals will show up here.', skipOffstage: false),
-        findsOneWidget,
-      );
+      expect(find.byType(GoalsPage, skipOffstage: false), findsOneWidget);
       expect(find.text('Finished periods will show up here.'), findsOneWidget);
     });
   });
