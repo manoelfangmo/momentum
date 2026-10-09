@@ -29,7 +29,7 @@ app/lib/features/<feature>/ with these layers. Dependencies point down only:
 
 Shared code in app/lib/core/:
   constants/     theme, environment.dart (local Supabase URL + anon key; 10.0.2.2 on Android)
-  database/      table/column/RPC name constants (GoalsTable.deadline, Rpc.verifyGoalComplete).
+  database/      table/column/RPC name constants (GoalsTable.deadline, Rpc.setGoalStatus).
                  Repositories never use string literals for table or column names.
   domain/        types shared by several features: Member, GoalType, Period
   routing/       go_router.dart, app_routes.dart (AppRoutes paths + publicRoutes),

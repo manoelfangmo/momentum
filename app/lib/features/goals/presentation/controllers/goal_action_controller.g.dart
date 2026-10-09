@@ -8,35 +8,35 @@ part of 'goal_action_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Runs the two status changes on one goal and holds their progress.
+/// Runs one write against one goal and holds its progress.
 ///
-/// A family keyed by [goalId], so a verify in flight only locks the tile it
+/// A family keyed by [goalId], so a call in flight only locks the tile it
 /// was started from rather than every tile in the list. There is no result to
-/// carry: the RPC returns the updated row, but the lists re-read it anyway.
+/// carry: the RPCs return the updated row, but the lists re-read it anyway.
 ///
-/// Both actions are a single repository call, so they go straight to
+/// Every action here is a single repository call, so they go straight to
 /// `GoalsRepository` rather than through a service.
 
 @ProviderFor(GoalActionController)
 final goalActionControllerProvider = GoalActionControllerFamily._();
 
-/// Runs the two status changes on one goal and holds their progress.
+/// Runs one write against one goal and holds its progress.
 ///
-/// A family keyed by [goalId], so a verify in flight only locks the tile it
+/// A family keyed by [goalId], so a call in flight only locks the tile it
 /// was started from rather than every tile in the list. There is no result to
-/// carry: the RPC returns the updated row, but the lists re-read it anyway.
+/// carry: the RPCs return the updated row, but the lists re-read it anyway.
 ///
-/// Both actions are a single repository call, so they go straight to
+/// Every action here is a single repository call, so they go straight to
 /// `GoalsRepository` rather than through a service.
 final class GoalActionControllerProvider
     extends $AsyncNotifierProvider<GoalActionController, void> {
-  /// Runs the two status changes on one goal and holds their progress.
+  /// Runs one write against one goal and holds its progress.
   ///
-  /// A family keyed by [goalId], so a verify in flight only locks the tile it
+  /// A family keyed by [goalId], so a call in flight only locks the tile it
   /// was started from rather than every tile in the list. There is no result to
-  /// carry: the RPC returns the updated row, but the lists re-read it anyway.
+  /// carry: the RPCs return the updated row, but the lists re-read it anyway.
   ///
-  /// Both actions are a single repository call, so they go straight to
+  /// Every action here is a single repository call, so they go straight to
   /// `GoalsRepository` rather than through a service.
   GoalActionControllerProvider._({
     required GoalActionControllerFamily super.from,
@@ -75,15 +75,15 @@ final class GoalActionControllerProvider
 }
 
 String _$goalActionControllerHash() =>
-    r'175e9266c3b6f004d13c871964ca4db705d610fe';
+    r'4033353f0e50138fc507af6238940a03823fd2ae';
 
-/// Runs the two status changes on one goal and holds their progress.
+/// Runs one write against one goal and holds its progress.
 ///
-/// A family keyed by [goalId], so a verify in flight only locks the tile it
+/// A family keyed by [goalId], so a call in flight only locks the tile it
 /// was started from rather than every tile in the list. There is no result to
-/// carry: the RPC returns the updated row, but the lists re-read it anyway.
+/// carry: the RPCs return the updated row, but the lists re-read it anyway.
 ///
-/// Both actions are a single repository call, so they go straight to
+/// Every action here is a single repository call, so they go straight to
 /// `GoalsRepository` rather than through a service.
 
 final class GoalActionControllerFamily extends $Family
@@ -104,13 +104,13 @@ final class GoalActionControllerFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Runs the two status changes on one goal and holds their progress.
+  /// Runs one write against one goal and holds its progress.
   ///
-  /// A family keyed by [goalId], so a verify in flight only locks the tile it
+  /// A family keyed by [goalId], so a call in flight only locks the tile it
   /// was started from rather than every tile in the list. There is no result to
-  /// carry: the RPC returns the updated row, but the lists re-read it anyway.
+  /// carry: the RPCs return the updated row, but the lists re-read it anyway.
   ///
-  /// Both actions are a single repository call, so they go straight to
+  /// Every action here is a single repository call, so they go straight to
   /// `GoalsRepository` rather than through a service.
 
   GoalActionControllerProvider call(String goalId) =>
@@ -120,13 +120,13 @@ final class GoalActionControllerFamily extends $Family
   String toString() => r'goalActionControllerProvider';
 }
 
-/// Runs the two status changes on one goal and holds their progress.
+/// Runs one write against one goal and holds its progress.
 ///
-/// A family keyed by [goalId], so a verify in flight only locks the tile it
+/// A family keyed by [goalId], so a call in flight only locks the tile it
 /// was started from rather than every tile in the list. There is no result to
-/// carry: the RPC returns the updated row, but the lists re-read it anyway.
+/// carry: the RPCs return the updated row, but the lists re-read it anyway.
 ///
-/// Both actions are a single repository call, so they go straight to
+/// Every action here is a single repository call, so they go straight to
 /// `GoalsRepository` rather than through a service.
 
 abstract class _$GoalActionController extends $AsyncNotifier<void> {

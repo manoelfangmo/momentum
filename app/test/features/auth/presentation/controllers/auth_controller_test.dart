@@ -75,14 +75,14 @@ void main() {
       ),
     ).thenAnswer((_) => inFlight.future);
 
-    final pending = controller().signIn(
+    final submitted = controller().signIn(
       email: 'ada@example.com',
       password: 'hunter2',
     );
     expect(state().isLoading, isTrue);
 
     inFlight.complete();
-    await pending;
+    await submitted;
     expect(state().isLoading, isFalse);
   });
 

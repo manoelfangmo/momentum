@@ -14,6 +14,7 @@ _Goal _$GoalFromJson(Map<String, dynamic> json) => _Goal(
   type: $enumDecode(_$GoalTypeEnumMap, json['type']),
   deadline: const LocalDateTimeConverter().fromJson(json['deadline'] as String),
   status: $enumDecode(_$GoalStatusEnumMap, json['status']),
+  verified: json['verified'] as bool,
   createdAt: const LocalDateTimeConverter().fromJson(
     json['created_at'] as String,
   ),
@@ -27,6 +28,7 @@ Map<String, dynamic> _$GoalToJson(_Goal instance) => <String, dynamic>{
   'type': _$GoalTypeEnumMap[instance.type]!,
   'deadline': const LocalDateTimeConverter().toJson(instance.deadline),
   'status': _$GoalStatusEnumMap[instance.status]!,
+  'verified': instance.verified,
   'created_at': const LocalDateTimeConverter().toJson(instance.createdAt),
 };
 
@@ -38,7 +40,7 @@ const _$GoalTypeEnumMap = {
 };
 
 const _$GoalStatusEnumMap = {
-  GoalStatus.pending: 'pending',
+  GoalStatus.notStarted: 'not_started',
+  GoalStatus.inProgress: 'in_progress',
   GoalStatus.complete: 'complete',
-  GoalStatus.missed: 'missed',
 };

@@ -1,12 +1,12 @@
 import 'package:app/features/stats/domain/completion_stats.dart';
 import 'package:flutter/material.dart';
 
-/// Compact rate for a period: `"2/3 · 67%"` plus a thin bar, or `"—"` when
-/// there are no goals.
+/// Compact rate for a period: `"2/3 verified · 67%"` plus a thin bar, or
+/// `"—"` when there are no goals.
 ///
 /// Colour follows the rate against the theme: green at 80% and up, amber
-/// from 50%, red below that. The tooltip spells out that pending still
-/// counts as a miss until someone verifies.
+/// from 50%, red below that. The tooltip spells out that only verified
+/// completions count.
 class CompletionBadge extends StatelessWidget {
   const CompletionBadge(this.stats, {super.key});
 
@@ -19,7 +19,7 @@ class CompletionBadge extends StatelessWidget {
     final color = _colorFor(theme.colorScheme, percent);
 
     return Tooltip(
-      message: 'Pending goals count as missed until verified',
+      message: 'Only verified completions count',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -48,7 +48,7 @@ class CompletionBadge extends StatelessWidget {
 String _labelFor(CompletionStats stats) {
   final percent = stats.percent;
   if (percent == null) return '—';
-  return '${stats.complete}/${stats.total} · ${(percent * 100).round()}%';
+  return '${stats.complete}/${stats.total} verified · ${(percent * 100).round()}%';
 }
 
 /// Traffic-light from the scheme where a role exists. There is no warning

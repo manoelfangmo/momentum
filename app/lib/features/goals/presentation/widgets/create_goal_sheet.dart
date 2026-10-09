@@ -9,7 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 /// Opens the new goal sheet for [type], the type of the tab it was opened
-/// from. Completes once the sheet is gone, whether it saved or was dismissed.
+/// from. Completes once the sheet is gone, whether it saved or was closed.
 Future<void> showCreateGoalSheet(BuildContext context, GoalType type) {
   return showModalBottomSheet<void>(
     context: context,

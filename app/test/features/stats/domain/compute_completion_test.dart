@@ -7,7 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 final _today = Period.containing(DateTime(2026, 10, 7, 9), GoalType.daily);
 
-Goal goalWith(String id, GoalStatus status) => Goal(
+Goal goalWith(
+  String id,
+  GoalStatus status, {
+  bool verified = false,
+}) => Goal(
   id: id,
   ownerId: 'user-1',
   groupId: 'group-1',
@@ -15,6 +19,7 @@ Goal goalWith(String id, GoalStatus status) => Goal(
   type: _today.type,
   deadline: _today.deadline,
   status: status,
+  verified: verified,
   createdAt: _today.start,
 );
 
@@ -33,11 +38,11 @@ void main() {
     expect(wholePercent(stats), isNull);
   });
 
-  test('all complete is 100%', () {
+  test('all complete and verified is 100%', () {
     final stats = completionFor([
-      goalWith('a', GoalStatus.complete),
-      goalWith('b', GoalStatus.complete),
-      goalWith('c', GoalStatus.complete),
+      goalWith('a', GoalStatus.complete, verified: true),
+      goalWith('b', GoalStatus.complete, verified: true),
+      goalWith('c', GoalStatus.complete, verified: true),
     ]);
 
     expect(stats, const CompletionStats(complete: 3, total: 3));
@@ -45,22 +50,32 @@ void main() {
     expect(wholePercent(stats), 100);
   });
 
-  test('pending and missed both count against', () {
+  test('complete but unverified counts as a miss', () {
     final stats = completionFor([
-      goalWith('done', GoalStatus.complete),
-      goalWith('waiting', GoalStatus.pending),
-      goalWith('missed', GoalStatus.missed),
+      goalWith('claimed', GoalStatus.complete),
+    ]);
+
+    expect(stats, const CompletionStats(complete: 0, total: 1));
+    expect(stats.percent, 0);
+    expect(wholePercent(stats), 0);
+  });
+
+  test('unverified and incomplete both count against', () {
+    final stats = completionFor([
+      goalWith('done', GoalStatus.complete, verified: true),
+      goalWith('waiting', GoalStatus.notStarted),
+      goalWith('claimed', GoalStatus.complete),
     ]);
 
     expect(stats, const CompletionStats(complete: 1, total: 3));
     expect(wholePercent(stats), 33);
   });
 
-  test('2 of 3 complete rounds to 67%', () {
+  test('2 of 3 complete and verified rounds to 67%', () {
     final stats = completionFor([
-      goalWith('a', GoalStatus.complete),
-      goalWith('b', GoalStatus.complete),
-      goalWith('c', GoalStatus.pending),
+      goalWith('a', GoalStatus.complete, verified: true),
+      goalWith('b', GoalStatus.complete, verified: true),
+      goalWith('c', GoalStatus.inProgress),
     ]);
 
     expect(stats, const CompletionStats(complete: 2, total: 3));

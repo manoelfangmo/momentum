@@ -7,6 +7,7 @@ import 'package:app/features/goals/data/goals_repository.dart';
 import 'package:app/features/goals/domain/goal.dart';
 import 'package:app/features/goals/domain/goal_status.dart';
 import 'package:app/features/goals/presentation/widgets/goal_actions.dart';
+import 'package:app/features/goals/presentation/widgets/goal_status_picker.dart';
 import 'package:app/features/groups/data/groups_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,7 +22,8 @@ const _sam = Member(id: 'user-2', name: 'Sam', groupId: 'group-1');
 final _today = Period.containing(DateTime(2026, 10, 7, 8), GoalType.daily);
 
 Goal goalWith({
-  GoalStatus status = GoalStatus.pending,
+  GoalStatus status = GoalStatus.notStarted,
+  bool verified = false,
   String ownerId = 'user-1',
   Period? period,
 }) {
@@ -34,6 +36,7 @@ Goal goalWith({
     type: goals.type,
     deadline: goals.deadline,
     status: status,
+    verified: verified,
     createdAt: goals.start,
   );
 }
@@ -46,8 +49,8 @@ void main() {
     goals = MockGoalsRepository();
     groups = MockGroupsRepository();
     when(groups.fetchMembers('group-1')).thenAnswer((_) async => [_ada, _sam]);
-    when(goals.verifyComplete(any)).thenAnswer((_) async => goalWith());
-    when(goals.markMissed(any)).thenAnswer((_) async => goalWith());
+    when(goals.verify(any)).thenAnswer((_) async => goalWith());
+    when(goals.setStatus(any, any)).thenAnswer((_) async => goalWith());
     when(
       goals.fetchGoals(
         ownerId: anyNamed('ownerId'),
@@ -77,39 +80,57 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets("the owner of a pending goal sees only Missed", (tester) async {
+  testWidgets('the owner of an unverified goal sees a status picker', (
+    tester,
+  ) async {
     await pumpActions(tester, goal: goalWith(), viewer: _ada);
 
-    expect(find.widgetWithText(TextButton, 'Missed'), findsOneWidget);
+    expect(find.byType(GoalStatusPicker), findsOneWidget);
     expect(find.text('Verify'), findsNothing);
   });
 
-  testWidgets("someone else sees only Verify", (tester) async {
-    await pumpActions(tester, goal: goalWith(), viewer: _sam);
-
-    expect(find.text('Verify'), findsOneWidget);
-    expect(find.widgetWithText(TextButton, 'Missed'), findsNothing);
-  });
-
-  testWidgets('a settled goal offers nothing', (tester) async {
+  testWidgets('someone else sees Verify only on a complete unverified goal', (
+    tester,
+  ) async {
     await pumpActions(
       tester,
       goal: goalWith(status: GoalStatus.complete),
       viewer: _sam,
     );
 
-    expect(find.text('Verify'), findsNothing);
-    expect(find.widgetWithText(TextButton, 'Missed'), findsNothing);
+    expect(find.text('Verify'), findsOneWidget);
+    expect(find.byType(GoalStatusPicker), findsNothing);
   });
 
-  testWidgets('an overdue pending goal can still be verified', (tester) async {
+  testWidgets('someone else sees nothing on a goal that is not complete', (
+    tester,
+  ) async {
+    await pumpActions(tester, goal: goalWith(), viewer: _sam);
+
+    expect(find.text('Verify'), findsNothing);
+    expect(find.byType(GoalStatusPicker), findsNothing);
+  });
+
+  testWidgets('a verified goal offers a lock and nothing else', (tester) async {
+    await pumpActions(
+      tester,
+      goal: goalWith(status: GoalStatus.complete, verified: true),
+      viewer: _ada,
+    );
+
+    expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+    expect(find.text('Verify'), findsNothing);
+    expect(find.byType(GoalStatusPicker), findsNothing);
+  });
+
+  testWidgets('an overdue complete goal can still be verified', (tester) async {
     final yesterday = Period.containing(
       DateTime(2026, 10, 6, 8),
       GoalType.daily,
     );
     await pumpActions(
       tester,
-      goal: goalWith(period: yesterday),
+      goal: goalWith(status: GoalStatus.complete, period: yesterday),
       viewer: _sam,
     );
 
@@ -119,60 +140,79 @@ void main() {
   testWidgets('Verify asks to confirm with the owner name first', (
     tester,
   ) async {
-    await pumpActions(tester, goal: goalWith(), viewer: _sam);
+    await pumpActions(
+      tester,
+      goal: goalWith(status: GoalStatus.complete),
+      viewer: _sam,
+    );
     await tester.tap(find.text('Verify'));
     await tester.pumpAndSettle();
 
-    expect(find.text("Mark 'Run 5k' as complete for Ada?"), findsOneWidget);
-    verifyNever(goals.verifyComplete(any));
+    expect(
+      find.text("Verify 'Run 5k' for Ada? This can't be undone."),
+      findsOneWidget,
+    );
+    verifyNever(goals.verify(any));
   });
 
-  testWidgets('Missed asks to confirm first', (tester) async {
+  testWidgets('changing status does not ask to confirm', (tester) async {
     await pumpActions(tester, goal: goalWith(), viewer: _ada);
-    await tester.tap(find.text('Missed'));
+    await tester.tap(find.byType(GoalStatusPicker));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('In progress').last);
     await tester.pumpAndSettle();
 
-    expect(find.text("Mark 'Run 5k' as missed?"), findsOneWidget);
-    verifyNever(goals.markMissed(any));
+    expect(find.text('Confirm'), findsNothing);
+    verify(goals.setStatus('goal-1', GoalStatus.inProgress)).called(1);
+  });
+
+  testWidgets('choosing Complete shows the verify hint', (tester) async {
+    await pumpActions(tester, goal: goalWith(), viewer: _ada);
+    await tester.tap(find.byType(GoalStatusPicker));
+    await tester.pumpAndSettle();
+
+    expect(find.text('A groupmate needs to verify this.'), findsOneWidget);
   });
 
   testWidgets('cancelling the confirm does not call the repository', (
     tester,
   ) async {
-    await pumpActions(tester, goal: goalWith(), viewer: _ada);
-    await tester.tap(find.text('Missed'));
+    await pumpActions(
+      tester,
+      goal: goalWith(status: GoalStatus.complete),
+      viewer: _sam,
+    );
+    await tester.tap(find.text('Verify'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
 
-    verifyNever(goals.markMissed(any));
+    verifyNever(goals.verify(any));
   });
 
   testWidgets('Confirm on Verify calls the repository', (tester) async {
-    await pumpActions(tester, goal: goalWith(), viewer: _sam);
+    await pumpActions(
+      tester,
+      goal: goalWith(status: GoalStatus.complete),
+      viewer: _sam,
+    );
     await tester.tap(find.text('Verify'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Confirm'));
     await tester.pumpAndSettle();
 
-    verify(goals.verifyComplete('goal-1')).called(1);
-  });
-
-  testWidgets('Confirm on Missed calls the repository', (tester) async {
-    await pumpActions(tester, goal: goalWith(), viewer: _ada);
-    await tester.tap(find.text('Missed'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Confirm'));
-    await tester.pumpAndSettle();
-
-    verify(goals.markMissed('goal-1')).called(1);
+    verify(goals.verify('goal-1')).called(1);
   });
 
   testWidgets('the button spins while the call is in flight', (tester) async {
     final inFlight = Completer<Goal>();
-    when(goals.verifyComplete(any)).thenAnswer((_) => inFlight.future);
+    when(goals.verify(any)).thenAnswer((_) => inFlight.future);
 
-    await pumpActions(tester, goal: goalWith(), viewer: _sam);
+    await pumpActions(
+      tester,
+      goal: goalWith(status: GoalStatus.complete),
+      viewer: _sam,
+    );
     await tester.tap(find.text('Verify'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Confirm'));
@@ -181,20 +221,24 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(find.text('Verify'), findsNothing);
 
-    inFlight.complete(goalWith());
+    inFlight.complete(goalWith(status: GoalStatus.complete));
     await tester.pumpAndSettle();
   });
 
   testWidgets('a rejected RPC shows the mapped message in a toast', (
     tester,
   ) async {
-    when(goals.verifyComplete(any)).thenThrow(
+    when(goals.verify(any)).thenThrow(
       const ValidationException(
-        'That goal was already settled. Refresh to see where it landed.',
+        'That goal is already verified. Refresh to see it.',
       ),
     );
 
-    await pumpActions(tester, goal: goalWith(), viewer: _sam);
+    await pumpActions(
+      tester,
+      goal: goalWith(status: GoalStatus.complete),
+      viewer: _sam,
+    );
     await tester.tap(find.text('Verify'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Confirm'));
@@ -203,7 +247,7 @@ void main() {
     expect(
       find.widgetWithText(
         SnackBar,
-        'That goal was already settled. Refresh to see where it landed.',
+        'That goal is already verified. Refresh to see it.',
       ),
       findsOneWidget,
     );

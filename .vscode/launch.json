@@ -1,0 +1,71 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run Mobile App",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "cwd": "${workspaceFolder}/app",
+            "args": [
+                "--dart-define-from-file",
+                "development.env",
+                "--flavor",
+                "development"
+            ],
+            "program": "lib/main.dart"
+        },
+        {
+            "name": "Run Web App",
+            "request": "launch",
+            "type": "dart",
+            "cwd": "${workspaceFolder}/app",
+            "args": [
+                "-d",
+                "chrome",
+                "--dart-define-from-file",
+                "development.env",
+                "--web-port=3000"
+            ]
+        },
+        {
+            "name": "Compounds Config For Device 1",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "deviceId": "XXXXXXXX",
+            "cwd": "${workspaceFolder}/apps/mobile",
+            "args": [
+                "--dart-define-from-file",
+                "development.env",
+                "--flavor",
+                "development"
+            ],
+            "program": "lib/main.dart"
+        },
+        {
+            "name": "Compounds Config For Device 2",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "deviceId": "XXXXXXXX",
+            "cwd": "${workspaceFolder}/apps/mobile",
+            "args": [
+                "--dart-define-from-file",
+                "development.env",
+                "--flavor",
+                "development"
+            ],
+            "program": "lib/main.dart"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Run On Mobile Devices 1 and 2",
+            "configurations": [
+                "Compounds Config For Device 1",
+                "Compounds Config For Device 2"
+            ]
+        }
+    ]
+}

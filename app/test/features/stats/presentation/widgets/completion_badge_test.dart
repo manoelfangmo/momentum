@@ -13,15 +13,15 @@ void main() {
   ColorScheme schemeOf(WidgetTester tester) =>
       Theme.of(tester.element(find.byType(CompletionBadge))).colorScheme;
 
-  testWidgets('2 of 3 is the label, a bar, and the pending-as-missed hint', (
+  testWidgets('2 of 3 is the verified label, a bar, and the hint', (
     tester,
   ) async {
     await pumpBadge(tester, const CompletionStats(complete: 2, total: 3));
 
-    expect(find.text('2/3 · 67%'), findsOneWidget);
+    expect(find.text('2/3 verified · 67%'), findsOneWidget);
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
     expect(
-      find.byTooltip('Pending goals count as missed until verified'),
+      find.byTooltip('Only verified completions count'),
       findsOneWidget,
     );
 
@@ -46,7 +46,7 @@ void main() {
     final bar = tester.widget<LinearProgressIndicator>(
       find.byType(LinearProgressIndicator),
     );
-    expect(find.text('4/5 · 80%'), findsOneWidget);
+    expect(find.text('4/5 verified · 80%'), findsOneWidget);
     expect(bar.color, schemeOf(tester).primary);
   });
 
@@ -56,7 +56,7 @@ void main() {
     final bar = tester.widget<LinearProgressIndicator>(
       find.byType(LinearProgressIndicator),
     );
-    expect(find.text('1/2 · 50%'), findsOneWidget);
+    expect(find.text('1/2 verified · 50%'), findsOneWidget);
     expect(bar.color, const Color(0xFFF9A825));
   });
 
@@ -66,7 +66,7 @@ void main() {
     final bar = tester.widget<LinearProgressIndicator>(
       find.byType(LinearProgressIndicator),
     );
-    expect(find.text('1/3 · 33%'), findsOneWidget);
+    expect(find.text('1/3 verified · 33%'), findsOneWidget);
     expect(bar.color, schemeOf(tester).error);
   });
 }

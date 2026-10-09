@@ -12,6 +12,8 @@ part 'goal.g.dart';
 /// [deadline] is the last instant of that period, so the goal belongs to the
 /// period that contains it; [period] recovers it. Both timestamps are local:
 /// the converter turns the UTC column into local time on read.
+///
+/// [verified] is final and only true when [status] is [GoalStatus.complete].
 @freezed
 abstract class Goal with _$Goal {
   const factory Goal({
@@ -22,6 +24,7 @@ abstract class Goal with _$Goal {
     required GoalType type,
     @LocalDateTimeConverter() required DateTime deadline,
     required GoalStatus status,
+    required bool verified,
     @LocalDateTimeConverter() required DateTime createdAt,
   }) = _Goal;
 
@@ -32,10 +35,15 @@ abstract class Goal with _$Goal {
   /// The period this goal was set for.
   Period get period => Period.containing(deadline, type);
 
-  /// Past its deadline and still pending.
+  /// Another member has verified this goal. Status can no longer change.
+  bool get isLocked => verified;
+
+  /// Counts toward completion: complete and verified. Everything else is a miss.
+  bool get countsAsDone => status == GoalStatus.complete && verified;
+
+  /// Past its deadline and not yet counted as done.
   ///
-  /// Nothing expires: an overdue goal can still be verified or marked missed.
+  /// Nothing expires: an overdue goal can still change status or be verified.
   /// This only changes how it reads in a list.
-  bool isOverdue(DateTime now) =>
-      status == GoalStatus.pending && now.isAfter(deadline);
+  bool isOverdue(DateTime now) => !countsAsDone && now.isAfter(deadline);
 }

@@ -61,9 +61,9 @@ Every feature uses the same four folders. A small feature can leave out `applica
 features/goals/
 ├── domain/
 │   ├── goal.dart                     # goal record the rest of the app uses
-│   ├── goal_status.dart              # pending / complete / missed
-│   ├── goal_event.dart
-│   └── goal_action_availability.dart # verify / markMissed / none
+│   ├── goal_status.dart              # not_started / in_progress / complete
+│   ├── goal_event.dart               # status_changed / verified
+│   └── goal_action_availability.dart # canChangeStatus / canVerify / none, canManage
 ├── data/
 │   ├── goals_repository.dart         # Supabase for goal rows and status RPCs
 │   └── models.dart                   # command objects sent to the database
@@ -159,7 +159,7 @@ await ref.read(groupsRepositoryProvider).joinGroup(groupId);
 ref.invalidate(currentMemberProvider);
 ```
 
-Verifying a goal is the same shape. The tile calls `GoalsRepository.verifyComplete(goalId)`, then invalidates the tab, history, and stats providers that show that goal.
+Verifying a goal is the same shape. The tile calls `GoalsRepository.verify(goalId)`, then invalidates the tab, history, and stats providers that show that goal. The owner changing status calls `GoalsRepository.setStatus(goalId, status)` the same way, and so do `updateTitle(goalId, title)` and `deleteGoal(goalId)` behind the tile's menu. All four go through `GoalActionController`, a family keyed by goal id that holds one call's progress and runs the invalidations.
 
 `ref.watch` subscribes and rebuilds. `ref.read` fires an action and does not subscribe. `ref.invalidate` drops the cached value so the next watch refetches.
 
@@ -185,9 +185,11 @@ Put logic in `application/` when it:
 - runs several repository calls that must succeed as one user action, or
 - decides something from data owned by another feature.
 
-`getGoalActionAvailability` is the third case. A pending goal shows **Verify** when the viewer is not the owner. It shows **Mark missed** when the viewer is the owner. Complete and missed goals show nothing. The service reads the current member and the goal, then returns a `GoalActionAvailability`. `GoalTile` renders a button for each case. The tile does not compare user ids itself.
+`goalActionAvailability` is the third case. An unverified goal shows a status picker when the viewer is the owner. It shows **Verify** when the viewer is not the owner and the status is complete. Verified goals show a lock and no controls. The service reads the current member and the goal, then returns a `GoalActionAvailability`. `GoalTile` renders a control for each case. The tile does not compare user ids itself.
 
-The database enforces the same rules again inside `verify_goal_complete` and `mark_goal_missed`. The app's check decides what to show. The RPC decides what is allowed.
+`canManageGoal` sits next to it and answers a separate question: may the viewer rename or delete this goal? Owner only, and only while it is unverified. It is its own provider rather than another `GoalActionAvailability` case because an owner can both change status and rename, so the two are not alternatives. `GoalMenu` shows itself only when it is true.
+
+The database enforces the same rules again inside `set_goal_status`, `verify_goal`, `update_goal_title`, and `delete_goal`. The app's check decides what to show. The RPC decides what is allowed. Verified is final: no un-verify, the owner can no longer change status, and the goal can no longer be renamed or deleted. There is no expiry — all four RPCs work after the deadline.
 
 ## What each layer is allowed to do
 
@@ -198,7 +200,7 @@ The database enforces the same rules again inside `verify_goal_complete` and `ma
 | `data/` | Repositories, command objects passed into those repositories | UI state, navigation |
 | `domain/` | Entities, value objects, decisions (`GoalActionAvailability`) | Flutter, Supabase, Riverpod |
 
-Table and column names are not string literals scattered through repositories. They live on classes in `app/lib/core/database/`, for example `GoalsTable.deadline` and `MembersTable.groupId`. RPC names live there too, on `Rpc.verifyGoalComplete`.
+Table and column names are not string literals scattered through repositories. They live on classes in `app/lib/core/database/`, for example `GoalsTable.deadline` and `MembersTable.groupId`. RPC names live there too, on `Rpc.setGoalStatus` and `Rpc.verifyGoal`.
 
 A repository or service method with more than two or three parameters takes one **command** object, defined next to the repository in `data/models.dart`. `CreateGoalCommand` is the goals example: the service builds it, `toJson()` is the insert payload.
 
@@ -277,13 +279,13 @@ Two Riverpod behaviours trip people up in tests:
 
 ## Domain models
 
-`Goal` is a Freezed class with `fromJson`. Freezed gives you `copyWith`, equality, and (for a sealed class) exhaustive cases. `GoalActionAvailability` is the sealed example: `verify`, `markMissed`, and `none`. The goal tile branches on those cases.
+`Goal` is a Freezed class with `fromJson`. Freezed gives you `copyWith`, equality, and (for a sealed class) exhaustive cases. `verified` is a boolean on the goal; it can only be true when `status` is complete. `GoalActionAvailability` is the sealed example: `CanChangeStatus`, `CanVerify`, and `NoAction`. The goal tile branches on those cases. `Goal.countsAsDone` is true only for complete and verified.
 
 JSON field renaming is configured for the project (`field_rename: snake` in `build.yaml`), so `ownerId` in Dart matches `owner_id` from Postgres without a manual map at every call. Timestamps arrive as UTC. `Goal.fromJson` converts `deadline` and `createdAt` to local time, and command objects convert back to UTC in `toJson()`.
 
 Computed facts that depend only on the entity live on the domain type. `Goal.isOverdue(now)` and `Goal.period` are examples. `Period` in `app/lib/core/domain/` owns all period math: `Period.containing(date, type)`, `start`, `end`, `deadline`, `previous()`, `label`. Weeks start Monday. Widgets read these. They do not reimplement the date math.
 
-Completion percentage is a domain function in `features/stats/domain/`. `completionFor(goals)` counts complete goals over all goals, with pending counted as missed. The tab header and each History period header call it on goals they already have.
+Completion percentage is a domain function in `features/stats/domain/`. `completionFor(goals)` counts goals where `goal.countsAsDone` (complete and verified) over all goals. Everything else is a miss, including complete-but-unverified. An empty list is 0 of 0 with no percent. The tab header and each History period header call it on goals they already have. The badge label reads `"2/3 verified · 67%"`.
 
 ## Routing
 
@@ -312,6 +314,8 @@ Routes that take parameters are classes in the feature, not inline `GoRoute`s. E
 
 The app talks to a Supabase stack running locally through the Supabase CLI (`supabase start`). There is no application server. Queries and RPCs are called from repositories.
 
-Schema, RLS policies, and SQL functions live in `supabase/migrations/` in this repo. Apply them with `supabase db reset` locally. Rules the database must enforce belong in SQL functions called with `supabase.rpc(...)`. Every goal status change goes through `verify_goal_complete` or `mark_goal_missed`. Those functions also write the `goal_events` row in the same transaction. Clients have no direct `UPDATE` on `goals`. Do not add Supabase Edge Functions for this logic.
+Schema, RLS policies, and SQL functions live in `supabase/migrations/` in this repo. Apply them with `supabase db reset` locally. Rules the database must enforce belong in SQL functions called with `supabase.rpc(...)`. Every status change goes through `set_goal_status`, every verification through `verify_goal`, every rename through `update_goal_title`, and every delete through `delete_goal`. The two status functions also write the `goal_events` row in the same transaction (`status_changed` with `new_status` set, or `verified` with `new_status` null); a rename writes no event, and a delete takes the goal's events with it through the cascade. Clients have no direct `UPDATE` or `DELETE` on `goals`. Do not add Supabase Edge Functions for this logic.
+
+Each function raises a stable token with an application-defined SQLSTATE in class `M0`, listed at the top of the migration that adds it. `GoalsRepository` maps those codes to an `AppException` with copy a widget can show. `supabase/tests/rls_check.sql` is the manual two-user script that exercises every one of them.
 
 When running on an Android emulator, the local Supabase URL uses `10.0.2.2` instead of `localhost`. `app/lib/core/constants/environment.dart` handles this.

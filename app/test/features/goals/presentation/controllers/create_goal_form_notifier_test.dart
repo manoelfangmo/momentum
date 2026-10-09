@@ -20,7 +20,8 @@ final _saved = Goal(
   title: 'Run 5k',
   type: GoalType.daily,
   deadline: Period.containing(_now, GoalType.daily).deadline,
-  status: GoalStatus.pending,
+  status: GoalStatus.notStarted,
+  verified: false,
   createdAt: _now,
 );
 

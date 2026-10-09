@@ -3,6 +3,7 @@ import 'package:app/features/goals/application/goal_service.dart';
 import 'package:app/features/goals/domain/goal.dart';
 import 'package:app/features/goals/domain/goal_action_availability.dart';
 import 'package:app/features/goals/presentation/controllers/goal_action_controller.dart';
+import 'package:app/features/goals/presentation/widgets/goal_status_picker.dart';
 import 'package:app/features/groups/data/groups_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +11,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// The one action the viewer may take on [goal], if any.
 ///
 /// Availability comes from [goalActionAvailabilityProvider], so this widget
-/// never compares member ids. A confirm sits in front of the repository call.
+/// never compares member ids. Status changes go straight to the picker;
+/// verify sits behind a confirm because it cannot be undone.
 class GoalActions extends ConsumerWidget {
   const GoalActions({super.key, required this.goal});
 
@@ -27,19 +29,18 @@ class GoalActions extends ConsumerWidget {
     });
 
     return switch (availability) {
-      CanVerify() => _ActionButton(
-        label: 'Verify',
+      CanChangeStatus() => GoalStatusPicker(goal: goal),
+      CanVerify() => _VerifyButton(
         isLoading: isLoading,
-        tonal: true,
         onPressed: () => _confirmVerify(context, ref),
       ),
-      CanMarkMissed() => _ActionButton(
-        label: 'Missed',
-        isLoading: isLoading,
-        tonal: false,
-        onPressed: () => _confirmMissed(context, ref),
-      ),
-      NoAction() => const SizedBox.shrink(),
+      NoAction() => goal.verified
+          ? Icon(
+              Icons.lock_outline,
+              size: 20,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            )
+          : const SizedBox.shrink(),
     };
   }
 
@@ -48,21 +49,10 @@ class GoalActions extends ConsumerWidget {
     if (!context.mounted) return;
     final confirmed = await _confirm(
       context,
-      "Mark '${goal.title}' as complete for $name?",
+      "Verify '${goal.title}' for $name? This can't be undone.",
     );
     if (!context.mounted || !confirmed) return;
     await ref.read(goalActionControllerProvider(goal.id).notifier).verify(goal);
-  }
-
-  Future<void> _confirmMissed(BuildContext context, WidgetRef ref) async {
-    final confirmed = await _confirm(
-      context,
-      "Mark '${goal.title}' as missed?",
-    );
-    if (!context.mounted || !confirmed) return;
-    await ref
-        .read(goalActionControllerProvider(goal.id).notifier)
-        .markMissed(goal);
   }
 
   /// The owner's name for the verify copy. Looked up from the group, not from
@@ -101,36 +91,26 @@ Future<bool> _confirm(BuildContext context, String message) async {
 }
 
 /// Compact enough to sit in a [ListTile] trailing slot.
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.label,
-    required this.isLoading,
-    required this.tonal,
-    required this.onPressed,
-  });
+class _VerifyButton extends StatelessWidget {
+  const _VerifyButton({required this.isLoading, required this.onPressed});
 
-  final String label;
   final bool isLoading;
-  final bool tonal;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final style = ButtonStyle(
-      visualDensity: VisualDensity.compact,
-      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    return FilledButton.tonal(
+      onPressed: isLoading ? null : onPressed,
+      style: const ButtonStyle(
+        visualDensity: VisualDensity.compact,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: isLoading
+          ? const SizedBox.square(
+              dimension: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Text('Verify'),
     );
-    final onPress = isLoading ? null : onPressed;
-    final child = isLoading
-        ? const SizedBox.square(
-            dimension: 16,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
-        : Text(label);
-
-    if (tonal) {
-      return FilledButton.tonal(onPressed: onPress, style: style, child: child);
-    }
-    return TextButton(onPressed: onPress, style: style, child: child);
   }
 }

@@ -88,11 +88,11 @@ void main() {
     final inFlight = Completer<Group>();
     when(groups.createGroup(any)).thenAnswer((_) => inFlight.future);
 
-    final pending = controller().create('Morning crew');
+    final submitted = controller().create('Morning crew');
     expect(state().isLoading, isTrue);
 
     inFlight.complete(_group);
-    await pending;
+    await submitted;
     expect(state().isLoading, isFalse);
   });
 

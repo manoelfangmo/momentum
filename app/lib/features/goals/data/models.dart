@@ -7,9 +7,9 @@ part 'models.g.dart';
 
 /// The insert payload for a new goal, built by `GoalService`.
 ///
-/// `status` and `created_at` are left out: the column defaults make the row
-/// pending, and the insert policy only accepts pending. [deadline] is written
-/// as UTC by the converter.
+/// `status`, `verified`, and `created_at` are left out: the column defaults
+/// make the row `not_started` and unverified, and the insert policy only
+/// accepts that. [deadline] is written as UTC by the converter.
 ///
 /// Write-only, so [toJson] is asked for explicitly instead of coming along
 /// with a `fromJson` nothing would call: goals are read back as `Goal`.

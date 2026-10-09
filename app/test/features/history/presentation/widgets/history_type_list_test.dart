@@ -5,6 +5,7 @@ import 'package:app/features/auth/data/member_repository.dart';
 import 'package:app/features/goals/data/goals_repository.dart';
 import 'package:app/features/goals/domain/goal.dart';
 import 'package:app/features/goals/domain/goal_status.dart';
+import 'package:app/features/goals/presentation/widgets/goal_status_picker.dart';
 import 'package:app/features/goals/presentation/widgets/goal_tile.dart';
 import 'package:app/features/history/presentation/widgets/history_period_header.dart';
 import 'package:app/features/history/presentation/widgets/history_type_list.dart';
@@ -25,7 +26,8 @@ final _monday = Period.containing(DateTime(2026, 10, 5), GoalType.daily);
 Goal goalCalled(
   String title,
   Period period, {
-  GoalStatus status = GoalStatus.pending,
+  GoalStatus status = GoalStatus.notStarted,
+  bool verified = false,
 }) => Goal(
   id: 'goal-$title',
   ownerId: 'user-1',
@@ -34,6 +36,7 @@ Goal goalCalled(
   type: period.type,
   deadline: period.deadline,
   status: status,
+  verified: verified,
   createdAt: period.start,
 );
 
@@ -89,7 +92,7 @@ void main() {
     expect(find.byType(HistoryPeriodHeader), findsNWidgets(2));
     expect(find.text('Mon, Oct 5'), findsOneWidget);
     expect(find.text('Tue, Oct 6'), findsOneWidget);
-    expect(find.text('0/1 · 0%'), findsNWidgets(2));
+    expect(find.text('0/1 verified · 0%'), findsNWidgets(2));
     expect(find.byType(GoalTile), findsNWidgets(2));
     expect(find.text('Run 5k'), findsOneWidget);
     expect(find.text('Read'), findsOneWidget);
@@ -99,7 +102,9 @@ void main() {
     expect(tuesdayTop, lessThan(mondayTop));
   });
 
-  testWidgets('a pending past goal still offers Missed', (tester) async {
+  testWidgets('an unverified past goal still offers the status picker', (
+    tester,
+  ) async {
     when(
       goals.fetchGoalsBefore(
         ownerId: 'user-1',
@@ -111,8 +116,43 @@ void main() {
     await pumpList(tester);
     await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(TextButton, 'Missed'), findsOneWidget);
+    expect(find.byType(GoalStatusPicker), findsOneWidget);
     expect(find.text('Verify'), findsNothing);
+  });
+
+  testWidgets('the owner can still rename or delete a past goal', (
+    tester,
+  ) async {
+    when(
+      goals.fetchGoalsBefore(
+        ownerId: 'user-1',
+        type: GoalType.daily,
+        before: _today.start,
+      ),
+    ).thenAnswer(
+      (_) async => [
+        goalCalled('Run 5k', _yesterday),
+        goalCalled(
+          'Read',
+          _monday,
+          status: GoalStatus.complete,
+          verified: true,
+        ),
+      ],
+    );
+
+    await pumpList(tester);
+    await tester.pumpAndSettle();
+
+    // One menu, on the unverified goal: verifying locks a past goal the same
+    // way it locks one in the current period.
+    expect(find.byIcon(Icons.more_vert), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit'), findsOneWidget);
+    expect(find.text('Delete'), findsOneWidget);
   });
 
   testWidgets("a period header shows that period's completion rate", (
@@ -126,8 +166,18 @@ void main() {
       ),
     ).thenAnswer(
       (_) async => [
-        goalCalled('Run 5k', _yesterday, status: GoalStatus.complete),
-        goalCalled('Read', _yesterday, status: GoalStatus.complete),
+        goalCalled(
+          'Run 5k',
+          _yesterday,
+          status: GoalStatus.complete,
+          verified: true,
+        ),
+        goalCalled(
+          'Read',
+          _yesterday,
+          status: GoalStatus.complete,
+          verified: true,
+        ),
         goalCalled('Stretch', _yesterday),
       ],
     );
@@ -136,10 +186,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Tue, Oct 6'), findsOneWidget);
-    expect(find.text('2/3 · 67%'), findsOneWidget);
+    expect(find.text('2/3 verified · 67%'), findsOneWidget);
   });
 
-  testWidgets('complete and missed goals still show under their period', (
+  testWidgets('complete and unverified goals still show under their period', (
     tester,
   ) async {
     when(
@@ -150,8 +200,13 @@ void main() {
       ),
     ).thenAnswer(
       (_) async => [
-        goalCalled('Run 5k', _yesterday, status: GoalStatus.complete),
-        goalCalled('Read', _monday, status: GoalStatus.missed),
+        goalCalled(
+          'Run 5k',
+          _yesterday,
+          status: GoalStatus.complete,
+          verified: true,
+        ),
+        goalCalled('Read', _monday, status: GoalStatus.inProgress),
       ],
     );
 
@@ -159,10 +214,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Complete'), findsOneWidget);
-    expect(find.text('Missed'), findsOneWidget);
-    expect(find.text('1/1 · 100%'), findsOneWidget);
-    expect(find.text('0/1 · 0%'), findsOneWidget);
-    expect(find.widgetWithText(TextButton, 'Missed'), findsNothing);
+    expect(find.text('In progress'), findsOneWidget);
+    expect(find.text('Verified'), findsOneWidget);
+    expect(find.text('1/1 verified · 100%'), findsOneWidget);
+    expect(find.text('0/1 verified · 0%'), findsOneWidget);
+    expect(find.text('Verify'), findsNothing);
   });
 
   testWidgets('says so when there are no past goals', (tester) async {

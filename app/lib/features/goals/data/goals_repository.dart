@@ -5,16 +5,19 @@ import 'package:app/core/utils/app_exception.dart';
 import 'package:app/core/utils/providers.dart';
 import 'package:app/features/goals/data/models.dart';
 import 'package:app/features/goals/domain/goal.dart';
+import 'package:app/features/goals/domain/goal_status.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'goals_repository.g.dart';
 
-/// Reads `public.goals` and owns the two status RPCs.
+/// Reads `public.goals` and owns the RPCs that write it.
 ///
-/// Verifying and marking missed go through `verify_goal_complete` and
-/// `mark_goal_missed` because clients have no `UPDATE` on `goals`. Both act as
-/// the caller, so neither takes an actor id.
+/// Changing status, verifying, renaming, and deleting all go through
+/// functions because clients have no `UPDATE` or `DELETE` on `goals`. Each
+/// acts as the caller, so none takes an actor id. The two status functions
+/// also write a `goal_events` row in the same transaction; a rename and a
+/// delete write no event.
 class GoalsRepository {
   GoalsRepository(this._supabase);
 
@@ -68,7 +71,8 @@ class GoalsRepository {
   }
 
   /// Inserts one goal and returns the stored row, which carries the id,
-  /// `pending` status, and `created_at` the database filled in.
+  /// `not_started` status, `verified = false`, and `created_at` the database
+  /// filled in.
   Future<Goal> createGoal(CreateGoalCommand command) async {
     try {
       final row = await _supabase
@@ -82,22 +86,45 @@ class GoalsRepository {
     }
   }
 
-  /// Marks someone else's pending goal complete.
-  Future<Goal> verifyComplete(String goalId) {
+  /// Sets the caller's own unverified goal to [status].
+  Future<Goal> setStatus(String goalId, GoalStatus status) {
     return _goal(
-      () =>
-          _supabase.rpc(Rpc.verifyGoalComplete, params: {Rpc.pGoalId: goalId}),
+      () => _supabase.rpc(
+        Rpc.setGoalStatus,
+        params: {Rpc.pGoalId: goalId, Rpc.pStatus: status.toDb()},
+      ),
     );
   }
 
-  /// Marks the caller's own pending goal missed.
-  Future<Goal> markMissed(String goalId) {
+  /// Marks someone else's complete, unverified goal as verified.
+  Future<Goal> verify(String goalId) {
     return _goal(
-      () => _supabase.rpc(Rpc.markGoalMissed, params: {Rpc.pGoalId: goalId}),
+      () => _supabase.rpc(Rpc.verifyGoal, params: {Rpc.pGoalId: goalId}),
     );
   }
 
-  /// Both RPCs return the updated `public.goals` row.
+  /// Renames the caller's own unverified goal. Nothing else about the goal
+  /// can move: the RPC takes no type, deadline, status, or verified.
+  Future<Goal> updateTitle(String goalId, String title) {
+    return _goal(
+      () => _supabase.rpc(
+        Rpc.updateGoalTitle,
+        params: {Rpc.pGoalId: goalId, Rpc.pTitle: title},
+      ),
+    );
+  }
+
+  /// Removes the caller's own unverified goal. Its `goal_events` go with it,
+  /// through the cascade on the foreign key.
+  Future<void> deleteGoal(String goalId) async {
+    try {
+      await _supabase.rpc(Rpc.deleteGoal, params: {Rpc.pGoalId: goalId});
+    } on PostgrestException catch (error) {
+      throw _mapped(error);
+    }
+  }
+
+  /// Every RPC here but `delete_goal` returns the updated `public.goals` row.
   Future<Goal> _goal(Future<dynamic> Function() call) async {
     try {
       final row = await call();
@@ -110,29 +137,47 @@ class GoalsRepository {
 
 /// Turns what Postgres raised into an exception a widget can render.
 ///
-/// The two races a member can actually hit are a goal someone else already
-/// closed and a goal that was deleted under them, so those get text that says
-/// to refresh. The rest describe a rule and read as one.
+/// The races a member can actually hit are a goal someone else already
+/// verified and a goal that was deleted under them, so those get text that
+/// says to refresh. The rest describe a rule and read as one.
 AppException _mapped(PostgrestException error) {
   switch (_tokenFor(error)) {
     case 'goal_not_found':
       return const ValidationException(
         'That goal is no longer there. Refresh and try again.',
       );
-    case 'goal_not_pending':
+    case 'only_owner_can_change_status':
+      return const PermissionException(
+        'Only the member who set a goal can change its status.',
+      );
+    case 'only_owner_can_edit':
+      return const PermissionException(
+        'Only the member who set a goal can edit it.',
+      );
+    case 'only_owner_can_delete':
+      return const PermissionException(
+        'Only the member who set a goal can delete it.',
+      );
+    case 'goal_verified_locked':
       return const ValidationException(
-        'That goal was already settled. Refresh to see where it landed.',
+        "This goal is verified and can't be changed.",
+      );
+    case 'invalid_title':
+      return const ValidationException(
+        'Give the goal a title of 140 characters or fewer.',
       );
     case 'cannot_verify_own_goal':
       return const PermissionException(
         'Someone else in your group has to verify your goals.',
       );
-    case 'only_owner_can_mark_missed':
-      return const PermissionException(
-        'Only the member who set a goal can mark it missed.',
+    case 'goal_not_complete':
+      return const ValidationException(
+        'That goal has to be complete before it can be verified.',
       );
-    case 'not_same_group':
-      return const PermissionException('That goal belongs to another group.');
+    case 'goal_already_verified':
+      return const ValidationException(
+        'That goal is already verified. Refresh to see it.',
+      );
     // insufficient_privilege: the grant or an RLS policy said no.
     case '42501':
       return const PermissionException();
@@ -143,15 +188,19 @@ AppException _mapped(PostgrestException error) {
 /// What failure this is.
 ///
 /// The RPCs raise application-defined SQLSTATEs (class M0, listed at the top
-/// of the RLS migration) and repeat the token in the message, so the message
-/// is a usable fallback when there is no code at all.
+/// of the status-rework migration) and repeat the token in the message, so
+/// the message is a usable fallback when there is no code at all.
 String _tokenFor(PostgrestException error) => switch (error.code) {
   null => error.message,
   'M0003' => 'goal_not_found',
-  'M0004' => 'not_same_group',
   'M0005' => 'cannot_verify_own_goal',
-  'M0006' => 'goal_not_pending',
-  'M0007' => 'only_owner_can_mark_missed',
+  'M0010' => 'only_owner_can_change_status',
+  'M0011' => 'goal_verified_locked',
+  'M0012' => 'goal_not_complete',
+  'M0013' => 'goal_already_verified',
+  'M0014' => 'only_owner_can_edit',
+  'M0015' => 'only_owner_can_delete',
+  'M0016' => 'invalid_title',
   final code => code,
 };
 

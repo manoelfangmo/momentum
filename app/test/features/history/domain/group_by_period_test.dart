@@ -13,7 +13,8 @@ Goal goalCalled(
   String title,
   Period period, {
   DateTime? createdAt,
-  GoalStatus status = GoalStatus.pending,
+  GoalStatus status = GoalStatus.notStarted,
+  bool verified = false,
 }) => Goal(
   id: 'goal-$title',
   ownerId: 'user-1',
@@ -22,6 +23,7 @@ Goal goalCalled(
   type: period.type,
   deadline: period.deadline,
   status: status,
+  verified: verified,
   createdAt: createdAt ?? period.start,
 );
 
@@ -64,21 +66,25 @@ void main() {
     expect(groupByPeriod([later, earlier]).single.goals, [earlier, later]);
   });
 
-  test('pending, complete and missed all belong', () {
-    final pending = goalCalled('Pending', _oct5);
+  test('not started, in progress and complete all belong', () {
+    final notStarted = goalCalled('Not started', _oct5);
     final complete = goalCalled(
       'Complete',
       _oct4,
       status: GoalStatus.complete,
     );
-    final missed = goalCalled('Missed', _oct3, status: GoalStatus.missed);
+    final inProgress = goalCalled(
+      'In progress',
+      _oct3,
+      status: GoalStatus.inProgress,
+    );
 
-    final sections = groupByPeriod([pending, complete, missed]);
+    final sections = groupByPeriod([notStarted, complete, inProgress]);
 
     expect(sections, [
-      HistorySection(period: _oct5, goals: [pending]),
+      HistorySection(period: _oct5, goals: [notStarted]),
       HistorySection(period: _oct4, goals: [complete]),
-      HistorySection(period: _oct3, goals: [missed]),
+      HistorySection(period: _oct3, goals: [inProgress]),
     ]);
   });
 

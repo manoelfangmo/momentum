@@ -12,5 +12,6 @@ abstract final class GoalsTable {
   static const type = 'type';
   static const deadline = 'deadline';
   static const status = 'status';
+  static const verified = 'verified';
   static const createdAt = 'created_at';
 }

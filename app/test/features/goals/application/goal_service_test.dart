@@ -21,14 +21,19 @@ const _unjoined = Member(id: 'user-3', name: 'Lin');
 /// A Friday morning: the week it lands in ends on Sunday the 11th.
 final _frozen = DateTime(2026, 10, 9, 8, 30);
 
-Goal goalOwnedBy(String ownerId) => Goal(
+Goal goalOwnedBy(
+  String ownerId, {
+  GoalStatus status = GoalStatus.notStarted,
+  bool verified = false,
+}) => Goal(
   id: 'goal-1',
   ownerId: ownerId,
   groupId: 'group-1',
   title: 'Run 5k',
   type: GoalType.daily,
   deadline: DateTime(2026, 10, 9, 23, 59, 59, 999),
-  status: GoalStatus.pending,
+  status: status,
+  verified: verified,
   createdAt: _frozen,
 );
 
@@ -144,25 +149,31 @@ void main() {
       return container.read(goalActionAvailabilityProvider(goal));
     }
 
-    test('offers the owner a way to mark their goal missed', () async {
+    test('offers the owner a way to change status', () async {
       expect(
         await availability(_ada, goalOwnedBy(_ada.id)),
-        const CanMarkMissed(),
+        const CanChangeStatus(),
       );
     });
 
-    test('offers everyone else a verify', () async {
+    test('offers everyone else a verify on an unverified complete goal', () async {
       expect(
-        await availability(_grace, goalOwnedBy(_ada.id)),
+        await availability(
+          _grace,
+          goalOwnedBy(_ada.id, status: GoalStatus.complete),
+        ),
         const CanVerify(),
       );
     });
 
-    test('offers nothing on a settled goal', () async {
-      final complete = goalOwnedBy(_ada.id)
-          .copyWith(status: GoalStatus.complete);
+    test('offers nothing on a verified goal', () async {
+      final verified = goalOwnedBy(
+        _ada.id,
+        status: GoalStatus.complete,
+        verified: true,
+      );
 
-      expect(await availability(_grace, complete), const NoAction());
+      expect(await availability(_grace, verified), const NoAction());
     });
 
     test('offers nothing while there is no member to compare against', () {
@@ -179,16 +190,49 @@ void main() {
       container.listen(currentMemberProvider, (_, _) {}, onError: (_, _) {});
       await container.read(currentMemberProvider.future);
       final mine = goalOwnedBy(_grace.id);
-      final theirs = goalOwnedBy(_ada.id);
+      final theirs = goalOwnedBy(_ada.id, status: GoalStatus.complete);
 
       expect(
         container.read(goalActionAvailabilityProvider(mine)),
-        const CanMarkMissed(),
+        const CanChangeStatus(),
       );
       expect(
         container.read(goalActionAvailabilityProvider(theirs)),
         const CanVerify(),
       );
+    });
+  });
+
+  group('canManageGoal', () {
+    Future<bool> canManageFor(Member? signedIn, Goal goal) async {
+      final container = containerFor(signedIn);
+      container.listen(currentMemberProvider, (_, _) {}, onError: (_, _) {});
+      await container.read(currentMemberProvider.future);
+      return container.read(canManageGoalProvider(goal));
+    }
+
+    test('lets the owner manage their unverified goal', () async {
+      expect(await canManageFor(_ada, goalOwnedBy(_ada.id)), isTrue);
+    });
+
+    test('does not let anyone else manage it', () async {
+      expect(await canManageFor(_grace, goalOwnedBy(_ada.id)), isFalse);
+    });
+
+    test('locks the goal for the owner once it is verified', () async {
+      final verified = goalOwnedBy(
+        _ada.id,
+        status: GoalStatus.complete,
+        verified: true,
+      );
+
+      expect(await canManageFor(_ada, verified), isFalse);
+    });
+
+    test('offers nothing while there is no member to compare against', () {
+      final container = containerFor(null);
+
+      expect(container.read(canManageGoalProvider(goalOwnedBy(_ada.id))), isFalse);
     });
   });
 }

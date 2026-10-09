@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Goal {
 
- String get id; String get ownerId; String get groupId; String get title; GoalType get type;@LocalDateTimeConverter() DateTime get deadline; GoalStatus get status;@LocalDateTimeConverter() DateTime get createdAt;
+ String get id; String get ownerId; String get groupId; String get title; GoalType get type;@LocalDateTimeConverter() DateTime get deadline; GoalStatus get status; bool get verified;@LocalDateTimeConverter() DateTime get createdAt;
 /// Create a copy of Goal
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,20 +30,20 @@ $GoalCopyWith<Goal> get copyWith => _$GoalCopyWithImpl<Goal>(this as Goal, _$ide
 @override
 bool operator ==(Object other) {
   final _this = this as Goal;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Goal&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.ownerId, _this.ownerId) || other.ownerId == _this.ownerId)&&(identical(other.groupId, _this.groupId) || other.groupId == _this.groupId)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.deadline, _this.deadline) || other.deadline == _this.deadline)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Goal&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.ownerId, _this.ownerId) || other.ownerId == _this.ownerId)&&(identical(other.groupId, _this.groupId) || other.groupId == _this.groupId)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.deadline, _this.deadline) || other.deadline == _this.deadline)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.verified, _this.verified) || other.verified == _this.verified)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as Goal;
-  return Object.hash(runtimeType,_this.id,_this.ownerId,_this.groupId,_this.title,_this.type,_this.deadline,_this.status,_this.createdAt);
+  return Object.hash(runtimeType,_this.id,_this.ownerId,_this.groupId,_this.title,_this.type,_this.deadline,_this.status,_this.verified,_this.createdAt);
 }
 
 @override
 String toString() {
   final _this = this as Goal;
-  return 'Goal(id: ${_this.id}, ownerId: ${_this.ownerId}, groupId: ${_this.groupId}, title: ${_this.title}, type: ${_this.type}, deadline: ${_this.deadline}, status: ${_this.status}, createdAt: ${_this.createdAt})';
+  return 'Goal(id: ${_this.id}, ownerId: ${_this.ownerId}, groupId: ${_this.groupId}, title: ${_this.title}, type: ${_this.type}, deadline: ${_this.deadline}, status: ${_this.status}, verified: ${_this.verified}, createdAt: ${_this.createdAt})';
 }
 
 
@@ -54,7 +54,7 @@ abstract mixin class $GoalCopyWith<$Res>  {
   factory $GoalCopyWith(Goal value, $Res Function(Goal) _then) = _$GoalCopyWithImpl;
 @useResult
 $Res call({
- String id, String ownerId, String groupId, String title, GoalType type,@LocalDateTimeConverter() DateTime deadline, GoalStatus status,@LocalDateTimeConverter() DateTime createdAt
+ String id, String ownerId, String groupId, String title, GoalType type,@LocalDateTimeConverter() DateTime deadline, GoalStatus status, bool verified,@LocalDateTimeConverter() DateTime createdAt
 });
 
 
@@ -71,7 +71,7 @@ class _$GoalCopyWithImpl<$Res>
 
 /// Create a copy of Goal
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? ownerId = null,Object? groupId = null,Object? title = null,Object? type = null,Object? deadline = null,Object? status = null,Object? createdAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? ownerId = null,Object? groupId = null,Object? title = null,Object? type = null,Object? deadline = null,Object? status = null,Object? verified = null,Object? createdAt = null,}) {
   return _then(Goal(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,ownerId: null == ownerId ? _self.ownerId : ownerId // ignore: cast_nullable_to_non_nullable
@@ -80,7 +80,8 @@ as String,title: null == title ? _self.title : title // ignore: cast_nullable_to
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as GoalType,deadline: null == deadline ? _self.deadline : deadline // ignore: cast_nullable_to_non_nullable
 as DateTime,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as GoalStatus,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as GoalStatus,verified: null == verified ? _self.verified : verified // ignore: cast_nullable_to_non_nullable
+as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,
   ));
 }
@@ -166,10 +167,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String ownerId,  String groupId,  String title,  GoalType type, @LocalDateTimeConverter()  DateTime deadline,  GoalStatus status, @LocalDateTimeConverter()  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String ownerId,  String groupId,  String title,  GoalType type, @LocalDateTimeConverter()  DateTime deadline,  GoalStatus status,  bool verified, @LocalDateTimeConverter()  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Goal() when $default != null:
-return $default(_that.id,_that.ownerId,_that.groupId,_that.title,_that.type,_that.deadline,_that.status,_that.createdAt);case _:
+return $default(_that.id,_that.ownerId,_that.groupId,_that.title,_that.type,_that.deadline,_that.status,_that.verified,_that.createdAt);case _:
   return orElse();
 
 }
@@ -187,10 +188,10 @@ return $default(_that.id,_that.ownerId,_that.groupId,_that.title,_that.type,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String ownerId,  String groupId,  String title,  GoalType type, @LocalDateTimeConverter()  DateTime deadline,  GoalStatus status, @LocalDateTimeConverter()  DateTime createdAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String ownerId,  String groupId,  String title,  GoalType type, @LocalDateTimeConverter()  DateTime deadline,  GoalStatus status,  bool verified, @LocalDateTimeConverter()  DateTime createdAt)  $default,) {final _that = this;
 switch (_that) {
 case _Goal():
-return $default(_that.id,_that.ownerId,_that.groupId,_that.title,_that.type,_that.deadline,_that.status,_that.createdAt);case _:
+return $default(_that.id,_that.ownerId,_that.groupId,_that.title,_that.type,_that.deadline,_that.status,_that.verified,_that.createdAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -207,10 +208,10 @@ return $default(_that.id,_that.ownerId,_that.groupId,_that.title,_that.type,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String ownerId,  String groupId,  String title,  GoalType type, @LocalDateTimeConverter()  DateTime deadline,  GoalStatus status, @LocalDateTimeConverter()  DateTime createdAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String ownerId,  String groupId,  String title,  GoalType type, @LocalDateTimeConverter()  DateTime deadline,  GoalStatus status,  bool verified, @LocalDateTimeConverter()  DateTime createdAt)?  $default,) {final _that = this;
 switch (_that) {
 case _Goal() when $default != null:
-return $default(_that.id,_that.ownerId,_that.groupId,_that.title,_that.type,_that.deadline,_that.status,_that.createdAt);case _:
+return $default(_that.id,_that.ownerId,_that.groupId,_that.title,_that.type,_that.deadline,_that.status,_that.verified,_that.createdAt);case _:
   return null;
 
 }
@@ -222,7 +223,7 @@ return $default(_that.id,_that.ownerId,_that.groupId,_that.title,_that.type,_tha
 @JsonSerializable()
 
 class _Goal extends Goal {
-  const _Goal({required this.id, required this.ownerId, required this.groupId, required this.title, required this.type, @LocalDateTimeConverter() required this.deadline, required this.status, @LocalDateTimeConverter() required this.createdAt}): super._();
+  const _Goal({required this.id, required this.ownerId, required this.groupId, required this.title, required this.type, @LocalDateTimeConverter() required this.deadline, required this.status, required this.verified, @LocalDateTimeConverter() required this.createdAt}): super._();
   factory _Goal.fromJson(Map<String, dynamic> json) => _$GoalFromJson(json);
 
 @override final  String id;
@@ -232,6 +233,7 @@ class _Goal extends Goal {
 @override final  GoalType type;
 @override@LocalDateTimeConverter() final  DateTime deadline;
 @override final  GoalStatus status;
+@override final  bool verified;
 @override@LocalDateTimeConverter() final  DateTime createdAt;
 
 /// Create a copy of Goal
@@ -247,18 +249,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Goal&&(identical(other.id, id) || other.id == id)&&(identical(other.ownerId, ownerId) || other.ownerId == ownerId)&&(identical(other.groupId, groupId) || other.groupId == groupId)&&(identical(other.title, title) || other.title == title)&&(identical(other.type, type) || other.type == type)&&(identical(other.deadline, deadline) || other.deadline == deadline)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Goal&&(identical(other.id, id) || other.id == id)&&(identical(other.ownerId, ownerId) || other.ownerId == ownerId)&&(identical(other.groupId, groupId) || other.groupId == groupId)&&(identical(other.title, title) || other.title == title)&&(identical(other.type, type) || other.type == type)&&(identical(other.deadline, deadline) || other.deadline == deadline)&&(identical(other.status, status) || other.status == status)&&(identical(other.verified, verified) || other.verified == verified)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,ownerId,groupId,title,type,deadline,status,createdAt);
+    return Object.hash(runtimeType,id,ownerId,groupId,title,type,deadline,status,verified,createdAt);
 }
 
 @override
 String toString() {
-    return 'Goal(id: $id, ownerId: $ownerId, groupId: $groupId, title: $title, type: $type, deadline: $deadline, status: $status, createdAt: $createdAt)';
+    return 'Goal(id: $id, ownerId: $ownerId, groupId: $groupId, title: $title, type: $type, deadline: $deadline, status: $status, verified: $verified, createdAt: $createdAt)';
 }
 
 
@@ -269,7 +271,7 @@ abstract mixin class _$GoalCopyWith<$Res> implements $GoalCopyWith<$Res> {
   factory _$GoalCopyWith(_Goal value, $Res Function(_Goal) _then) = __$GoalCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String ownerId, String groupId, String title, GoalType type,@LocalDateTimeConverter() DateTime deadline, GoalStatus status,@LocalDateTimeConverter() DateTime createdAt
+ String id, String ownerId, String groupId, String title, GoalType type,@LocalDateTimeConverter() DateTime deadline, GoalStatus status, bool verified,@LocalDateTimeConverter() DateTime createdAt
 });
 
 
@@ -286,7 +288,7 @@ class __$GoalCopyWithImpl<$Res>
 
 /// Create a copy of Goal
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? ownerId = null,Object? groupId = null,Object? title = null,Object? type = null,Object? deadline = null,Object? status = null,Object? createdAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? ownerId = null,Object? groupId = null,Object? title = null,Object? type = null,Object? deadline = null,Object? status = null,Object? verified = null,Object? createdAt = null,}) {
   return _then(_Goal(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,ownerId: null == ownerId ? _self.ownerId : ownerId // ignore: cast_nullable_to_non_nullable
@@ -295,7 +297,8 @@ as String,title: null == title ? _self.title : title // ignore: cast_nullable_to
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as GoalType,deadline: null == deadline ? _self.deadline : deadline // ignore: cast_nullable_to_non_nullable
 as DateTime,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as GoalStatus,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as GoalStatus,verified: null == verified ? _self.verified : verified // ignore: cast_nullable_to_non_nullable
+as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,
   ));
 }

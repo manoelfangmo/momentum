@@ -29,7 +29,8 @@ Goal goalCalled(String title, GoalType type) {
     title: title,
     type: type,
     deadline: period.deadline,
-    status: GoalStatus.pending,
+    status: GoalStatus.notStarted,
+    verified: false,
     createdAt: period.start,
   );
 }

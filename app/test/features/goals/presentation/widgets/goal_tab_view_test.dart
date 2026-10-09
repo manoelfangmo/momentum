@@ -8,6 +8,7 @@ import 'package:app/features/goals/data/goals_repository.dart';
 import 'package:app/features/goals/domain/goal.dart';
 import 'package:app/features/goals/domain/goal_status.dart';
 import 'package:app/features/goals/presentation/controllers/goals_view_controller.dart';
+import 'package:app/features/goals/presentation/widgets/goal_status_picker.dart';
 import 'package:app/features/goals/presentation/widgets/goal_tab_view.dart';
 import 'package:app/features/goals/presentation/widgets/goal_tile.dart';
 import 'package:app/features/groups/data/groups_repository.dart';
@@ -24,7 +25,11 @@ const _grace = Member(id: 'user-2', name: 'Grace', groupId: 'group-1');
 final _now = DateTime(2026, 10, 7, 9);
 final _today = Period.containing(_now, GoalType.daily);
 
-Goal goalCalled(String title, {GoalStatus status = GoalStatus.pending}) => Goal(
+Goal goalCalled(
+  String title, {
+  GoalStatus status = GoalStatus.notStarted,
+  bool verified = false,
+}) => Goal(
   id: 'goal-$title',
   ownerId: 'user-1',
   groupId: 'group-1',
@@ -32,6 +37,7 @@ Goal goalCalled(String title, {GoalStatus status = GoalStatus.pending}) => Goal(
   type: _today.type,
   deadline: _today.deadline,
   status: status,
+  verified: verified,
   createdAt: _today.start,
 );
 
@@ -74,8 +80,8 @@ void main() {
   ) async {
     when(goals.fetchGoals(ownerId: 'user-1', period: _today)).thenAnswer(
       (_) async => [
-        goalCalled('Run 5k', status: GoalStatus.complete),
-        goalCalled('Read', status: GoalStatus.complete),
+        goalCalled('Run 5k', status: GoalStatus.complete, verified: true),
+        goalCalled('Read', status: GoalStatus.complete, verified: true),
         goalCalled('Stretch'),
       ],
     );
@@ -84,7 +90,7 @@ void main() {
 
     expect(find.text('Wed, Oct 7'), findsOneWidget);
     expect(find.text('Your goals'), findsOneWidget);
-    expect(find.text('2/3 · 67%'), findsOneWidget);
+    expect(find.text('2/3 verified · 67%'), findsOneWidget);
     expect(find.byType(GoalTile), findsNWidgets(3));
   });
 
@@ -160,19 +166,20 @@ void main() {
     verify(goals.fetchGoals(ownerId: 'user-1', period: _today)).called(2);
   });
 
-  testWidgets('the owner sees Missed, not Verify', (tester) async {
+  testWidgets('the owner sees a status picker, not Verify', (tester) async {
     when(goals.fetchGoals(ownerId: 'user-1', period: _today))
         .thenAnswer((_) async => [goalCalled('Run 5k')]);
 
     await pumpTab(tester);
 
-    expect(find.widgetWithText(TextButton, 'Missed'), findsOneWidget);
+    expect(find.byType(GoalStatusPicker), findsOneWidget);
     expect(find.text('Verify'), findsNothing);
   });
 
-  testWidgets("someone else sees Verify on Ada's pending goal", (tester) async {
-    when(goals.fetchGoals(ownerId: 'user-1', period: _today))
-        .thenAnswer((_) async => [goalCalled('Run 5k')]);
+  testWidgets("someone else sees Verify on Ada's complete goal", (tester) async {
+    when(goals.fetchGoals(ownerId: 'user-1', period: _today)).thenAnswer(
+      (_) async => [goalCalled('Run 5k', status: GoalStatus.complete)],
+    );
     container = ProviderContainer(
       retry: (count, error) => null,
       overrides: [
@@ -188,18 +195,18 @@ void main() {
     await pumpTab(tester);
 
     expect(find.text('Verify'), findsOneWidget);
-    expect(find.widgetWithText(TextButton, 'Missed'), findsNothing);
+    expect(find.byType(GoalStatusPicker), findsNothing);
   });
 
-  testWidgets('verifying updates the tile to Complete', (tester) async {
-    final pending = goalCalled('Run 5k');
-    final complete = pending.copyWith(status: GoalStatus.complete);
+  testWidgets('verifying updates the tile to Verified', (tester) async {
+    final waiting = goalCalled('Run 5k', status: GoalStatus.complete);
+    final verified = waiting.copyWith(verified: true);
     var settled = false;
     when(goals.fetchGoals(ownerId: 'user-1', period: _today))
-        .thenAnswer((_) async => [settled ? complete : pending]);
-    when(goals.verifyComplete(pending.id)).thenAnswer((_) async {
+        .thenAnswer((_) async => [settled ? verified : waiting]);
+    when(goals.verify(waiting.id)).thenAnswer((_) async {
       settled = true;
-      return complete;
+      return verified;
     });
     container = ProviderContainer(
       retry: (count, error) => null,
@@ -219,11 +226,11 @@ void main() {
     await tester.tap(find.text('Confirm'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Complete'), findsOneWidget);
+    expect(find.text('Verified'), findsOneWidget);
     expect(find.text('Verify'), findsNothing);
   });
 
-  testWidgets('a past day still offers the action', (tester) async {
+  testWidgets('a past day still offers the status picker', (tester) async {
     final yesterday = Period.containing(
       DateTime(2026, 10, 6, 9),
       GoalType.daily,
@@ -237,7 +244,8 @@ void main() {
           title: 'Run 5k',
           type: GoalType.daily,
           deadline: yesterday.deadline,
-          status: GoalStatus.pending,
+          status: GoalStatus.notStarted,
+          verified: false,
           createdAt: yesterday.start,
         ),
       ],
@@ -248,6 +256,6 @@ void main() {
 
     await pumpTab(tester);
 
-    expect(find.widgetWithText(TextButton, 'Missed'), findsOneWidget);
+    expect(find.byType(GoalStatusPicker), findsOneWidget);
   });
 }

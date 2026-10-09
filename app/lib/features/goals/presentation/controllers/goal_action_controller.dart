@@ -2,36 +2,50 @@ import 'dart:async';
 
 import 'package:app/features/goals/data/goals_repository.dart';
 import 'package:app/features/goals/domain/goal.dart';
+import 'package:app/features/goals/domain/goal_status.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'goal_action_controller.g.dart';
 
-/// Runs the two status changes on one goal and holds their progress.
+/// Runs one write against one goal and holds its progress.
 ///
-/// A family keyed by [goalId], so a verify in flight only locks the tile it
+/// A family keyed by [goalId], so a call in flight only locks the tile it
 /// was started from rather than every tile in the list. There is no result to
-/// carry: the RPC returns the updated row, but the lists re-read it anyway.
+/// carry: the RPCs return the updated row, but the lists re-read it anyway.
 ///
-/// Both actions are a single repository call, so they go straight to
+/// Every action here is a single repository call, so they go straight to
 /// `GoalsRepository` rather than through a service.
 @riverpod
 class GoalActionController extends _$GoalActionController {
   @override
   FutureOr<void> build(String goalId) {}
 
-  /// Marks someone else's pending goal complete.
-  Future<void> verify(Goal goal) {
+  /// Sets the owner's own unverified goal to [status].
+  Future<void> setStatus(Goal goal, GoalStatus status) {
     return _run(
-      () => ref.read(goalsRepositoryProvider).verifyComplete(goal.id),
+      () => ref.read(goalsRepositoryProvider).setStatus(goal.id, status),
     );
   }
 
-  /// Marks the viewer's own pending goal missed.
-  Future<void> markMissed(Goal goal) {
-    return _run(() => ref.read(goalsRepositoryProvider).markMissed(goal.id));
+  /// Marks someone else's complete, unverified goal as verified.
+  Future<void> verify(Goal goal) {
+    return _run(() => ref.read(goalsRepositoryProvider).verify(goal.id));
   }
 
-  Future<void> _run(Future<Goal> Function() action) async {
+  /// Renames the owner's own unverified goal. [title] is stored as given;
+  /// the sheet trims it, and so does the RPC.
+  Future<void> updateTitle(Goal goal, String title) {
+    return _run(
+      () => ref.read(goalsRepositoryProvider).updateTitle(goal.id, title),
+    );
+  }
+
+  /// Removes the owner's own unverified goal, events and all.
+  Future<void> delete(Goal goal) {
+    return _run(() => ref.read(goalsRepositoryProvider).deleteGoal(goal.id));
+  }
+
+  Future<void> _run(Future<void> Function() action) async {
     state = const AsyncLoading();
     final result = await AsyncValue.guard(action);
 

@@ -50,10 +50,11 @@ void main() {
       );
     });
 
-    test('leaves status and created_at to the database', () {
+    test('leaves status, verified, and created_at to the database', () {
       final json = commandFor(deadline).toJson();
 
       expect(json.containsKey('status'), isFalse);
+      expect(json.containsKey('verified'), isFalse);
       expect(json.containsKey('created_at'), isFalse);
       expect(json.containsKey('id'), isFalse);
     });

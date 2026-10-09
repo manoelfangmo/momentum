@@ -25,7 +25,8 @@ final _saved = Goal(
   title: 'Run 5k',
   type: GoalType.daily,
   deadline: Period.containing(_now, GoalType.daily).deadline,
-  status: GoalStatus.pending,
+  status: GoalStatus.notStarted,
+  verified: false,
   createdAt: _now,
 );
 
@@ -183,7 +184,7 @@ void main() {
     ).called(1);
   });
 
-  testWidgets('a dismissed sheet leaves nothing behind', (tester) async {
+  testWidgets('a closed sheet leaves nothing behind', (tester) async {
     await openSheet(tester, GoalType.daily);
     await tester.enterText(titleField(), 'Run 5k');
 

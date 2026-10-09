@@ -168,3 +168,108 @@ final class GoalActionAvailabilityFamily extends $Family
   @override
   String toString() => r'goalActionAvailabilityProvider';
 }
+
+/// Whether the signed-in member may rename or delete [goal].
+///
+/// Alongside [goalActionAvailability] and for the same reason: the member
+/// comes from auth, so no widget compares ids to decide whether to draw the
+/// menu. An unresolved member is offered nothing.
+
+@ProviderFor(canManageGoal)
+final canManageGoalProvider = CanManageGoalFamily._();
+
+/// Whether the signed-in member may rename or delete [goal].
+///
+/// Alongside [goalActionAvailability] and for the same reason: the member
+/// comes from auth, so no widget compares ids to decide whether to draw the
+/// menu. An unresolved member is offered nothing.
+
+final class CanManageGoalProvider extends $FunctionalProvider<bool, bool, bool>
+    with $Provider<bool> {
+  /// Whether the signed-in member may rename or delete [goal].
+  ///
+  /// Alongside [goalActionAvailability] and for the same reason: the member
+  /// comes from auth, so no widget compares ids to decide whether to draw the
+  /// menu. An unresolved member is offered nothing.
+  CanManageGoalProvider._({
+    required CanManageGoalFamily super.from,
+    required Goal super.argument,
+  }) : super(
+         retry: null,
+         name: r'canManageGoalProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$canManageGoalHash();
+
+  @override
+  String toString() {
+    return r'canManageGoalProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  bool create(Ref ref) {
+    final argument = this.argument as Goal;
+    return canManageGoal(ref, argument);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CanManageGoalProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$canManageGoalHash() => r'8d05d4cf36f0f694a2ccb71d50825ea9bd9031ec';
+
+/// Whether the signed-in member may rename or delete [goal].
+///
+/// Alongside [goalActionAvailability] and for the same reason: the member
+/// comes from auth, so no widget compares ids to decide whether to draw the
+/// menu. An unresolved member is offered nothing.
+
+final class CanManageGoalFamily extends $Family
+    with $FunctionalFamilyOverride<bool, Goal> {
+  CanManageGoalFamily._()
+    : super(
+        retry: null,
+        name: r'canManageGoalProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Whether the signed-in member may rename or delete [goal].
+  ///
+  /// Alongside [goalActionAvailability] and for the same reason: the member
+  /// comes from auth, so no widget compares ids to decide whether to draw the
+  /// menu. An unresolved member is offered nothing.
+
+  CanManageGoalProvider call(Goal goal) =>
+      CanManageGoalProvider._(argument: goal, from: this);
+
+  @override
+  String toString() => r'canManageGoalProvider';
+}

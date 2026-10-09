@@ -23,7 +23,7 @@ class GoalService {
   /// Members only create goals for themselves, so there is no owner argument;
   /// the tab decides [type]. The deadline is the last instant of the period
   /// containing now, which is also what the insert policy expects to see on a
-  /// pending row.
+  /// not_started, unverified row.
   Future<Goal> createGoal({
     required String title,
     required GoalType type,
@@ -61,4 +61,16 @@ GoalActionAvailability goalActionAvailability(Ref ref, Goal goal) {
   final viewerId = ref.watch(currentMemberProvider).value?.id;
   if (viewerId == null) return const NoAction();
   return availabilityFor(goal, viewerId);
+}
+
+/// Whether the signed-in member may rename or delete [goal].
+///
+/// Alongside [goalActionAvailability] and for the same reason: the member
+/// comes from auth, so no widget compares ids to decide whether to draw the
+/// menu. An unresolved member is offered nothing.
+@riverpod
+bool canManageGoal(Ref ref, Goal goal) {
+  final viewerId = ref.watch(currentMemberProvider).value?.id;
+  if (viewerId == null) return false;
+  return canManage(goal, viewerId);
 }
