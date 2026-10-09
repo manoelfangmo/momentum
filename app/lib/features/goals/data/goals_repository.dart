@@ -15,9 +15,8 @@ part 'goals_repository.g.dart';
 ///
 /// Changing status, verifying, renaming, and deleting all go through
 /// functions because clients have no `UPDATE` or `DELETE` on `goals`. Each
-/// acts as the caller, so none takes an actor id. The two status functions
-/// also write a `goal_events` row in the same transaction; a rename and a
-/// delete write no event.
+/// acts as the caller, so none takes an actor id. All four also write a
+/// `goal_events` row in the same transaction.
 class GoalsRepository {
   GoalsRepository(this._supabase);
 
@@ -114,8 +113,8 @@ class GoalsRepository {
     );
   }
 
-  /// Removes the caller's own unverified goal. Its `goal_events` go with it,
-  /// through the cascade on the foreign key.
+  /// Removes the caller's own unverified goal. Its `goal_events` stay: each
+  /// one carries a copy of the goal, so the log survives the delete.
   Future<void> deleteGoal(String goalId) async {
     try {
       await _supabase.rpc(Rpc.deleteGoal, params: {Rpc.pGoalId: goalId});

@@ -39,6 +39,22 @@
 -- Setup. Ada and Ben. The auth trigger inserts their members rows.
 -- ---------------------------------------------------------------------------
 
+-- Events go first: they reference groups and members, and they no longer
+-- reference goals, so nothing takes them along.
+delete from public.goal_events
+where goal_owner_id in (
+  '11111111-1111-4111-8111-111111111111',
+  '22222222-2222-4222-8222-222222222222'
+)
+or group_id in (
+  select id
+  from public.groups
+  where created_by in (
+    '11111111-1111-4111-8111-111111111111',
+    '22222222-2222-4222-8222-222222222222'
+  )
+);
+
 delete from public.goals
 where owner_id in (
   '11111111-1111-4111-8111-111111111111',
@@ -437,8 +453,10 @@ begin
   end;
 
   begin
-    insert into public.goal_events (goal_id, actor_id, action, new_status)
-    select id, owner_id, 'verified', 'complete'
+    insert into public.goal_events (
+      goal_id, group_id, goal_owner_id, goal_title, actor_id, action, new_status
+    )
+    select id, group_id, owner_id, title, owner_id, 'verified', 'complete'
     from public.goals
     where title = 'Ada goal one';
     raise exception 'expected goal_events_new_status_matches_action';
@@ -624,8 +642,10 @@ end;
 $$;
 
 -- Harness insert as postgres. Authenticated has no insert on goal_events.
-insert into public.goal_events (goal_id, actor_id, action, new_status)
-select id, owner_id, 'status_changed', 'not_started'
+insert into public.goal_events (
+  goal_id, group_id, goal_owner_id, goal_title, actor_id, action, new_status
+)
+select id, group_id, owner_id, title, owner_id, 'status_changed', 'not_started'
 from public.goals
 where title = 'Ada goal one';
 
@@ -641,9 +661,10 @@ begin
   );
   execute 'set local role authenticated';
 
+  -- Two: the created event the insert trigger wrote, and the harness row.
   select count(*) into seen from public.goal_events;
-  if seen <> 1 then
-    raise exception 'Ada should see the event, saw %', seen;
+  if seen <> 2 then
+    raise exception 'Ada should see both events, saw %', seen;
   end if;
 
   raise notice 'ok: owner group can select goal_events';
@@ -668,9 +689,14 @@ begin
   end if;
 
   begin
-    insert into public.goal_events (goal_id, actor_id, action, new_status)
+    insert into public.goal_events (
+      goal_id, group_id, goal_owner_id, goal_title, actor_id, action, new_status
+    )
     values (
       '99999999-9999-4999-8999-999999999999',
+      '99999999-9999-4999-8999-999999999999',
+      ben,
+      'Forged event',
       ben,
       'status_changed',
       'in_progress'
@@ -1136,8 +1162,9 @@ $$;
 
 -- ---------------------------------------------------------------------------
 -- 9. Rename and delete. Owner only, unverified only, title trimmed to 1..140.
---    A goal the caller cannot see is goal_not_found on both. Deleting a goal
---    takes its events with it. Still no direct UPDATE or DELETE on goals.
+--    A goal the caller cannot see is goal_not_found on both. An insert logs
+--    created, a rename logs title_edited, and a delete logs deleted and then
+--    leaves every event behind. Still no direct UPDATE or DELETE on goals.
 -- ---------------------------------------------------------------------------
 
 do $$
@@ -1390,11 +1417,29 @@ begin
   )
   returning id into target;
 
-  perform public.set_goal_status(target, 'in_progress');
-
-  select count(*) into seen from public.goal_events where goal_id = target;
+  select count(*) into seen
+  from public.goal_events
+  where goal_id = target
+    and action = 'created'
+    and actor_id = ada
+    and goal_title = 'Ada goal three';
   if seen <> 1 then
-    raise exception 'goal three should have one event, saw %', seen;
+    raise exception 'the insert should log one created event, saw %', seen;
+  end if;
+
+  perform public.set_goal_status(target, 'in_progress');
+  perform public.update_goal_title(target, 'Ada goal three renamed');
+
+  -- title_edited carries the new title and no status.
+  select count(*) into seen
+  from public.goal_events
+  where goal_id = target
+    and action = 'title_edited'
+    and actor_id = ada
+    and goal_title = 'Ada goal three renamed'
+    and new_status is null;
+  if seen <> 1 then
+    raise exception 'the rename should log one title_edited event, saw %', seen;
   end if;
 
   perform set_config('momentum.goal_three', target::text, false);
@@ -1406,28 +1451,63 @@ begin
     raise exception 'goal three should be gone, saw %', seen;
   end if;
 
-  raise notice 'ok: owner deletes their unverified goal';
+  raise notice 'ok: created and title_edited logged, owner deletes the goal';
 end;
 $$;
 
--- As postgres: the events are hidden from authenticated once the goal is
--- gone, so the cascade has to be counted without a policy in the way.
+-- The events outlive the goal: goal_id references nothing, and the SELECT
+-- policy reads goal_events.group_id, so Ada still sees all four of them.
+-- The goal row itself is counted as postgres, before RLS could hide it.
 do $$
 declare
+  ada uuid := '11111111-1111-4111-8111-111111111111';
   target uuid := current_setting('momentum.goal_three')::uuid;
+  ada_group uuid;
   seen int;
 begin
+  select group_id into ada_group from public.members where id = ada;
+
   select count(*) into seen from public.goals where id = target;
   if seen <> 0 then
     raise exception 'goal three row survived';
   end if;
 
-  select count(*) into seen from public.goal_events where goal_id = target;
-  if seen <> 0 then
-    raise exception 'goal three events survived the delete, saw %', seen;
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', ada, 'role', 'authenticated')::text,
+    true
+  );
+  execute 'set local role authenticated';
+
+  select count(*) into seen
+  from public.goal_events
+  where goal_id = target;
+  if seen <> 4 then
+    raise exception 'goal three should keep its four events, saw %', seen;
   end if;
 
-  raise notice 'ok: goal_events cascade with the goal';
+  -- The snapshots are what names the goal now that it is gone.
+  select count(*) into seen
+  from public.goal_events
+  where goal_id = target
+    and group_id = ada_group
+    and goal_owner_id = ada
+    and goal_title in ('Ada goal three', 'Ada goal three renamed');
+  if seen <> 4 then
+    raise exception 'every event should snapshot the deleted goal, saw %', seen;
+  end if;
+
+  select count(*) into seen
+  from public.goal_events
+  where goal_id = target
+    and action = 'deleted'
+    and actor_id = ada
+    and goal_title = 'Ada goal three renamed';
+  if seen <> 1 then
+    raise exception 'the delete should log one deleted event, saw %', seen;
+  end if;
+
+  raise notice 'ok: a deleted goal keeps its events';
 end;
 $$;
 
