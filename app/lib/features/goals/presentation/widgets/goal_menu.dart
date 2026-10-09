@@ -25,9 +25,7 @@ class GoalMenu extends ConsumerWidget {
     // Watched, not read: the controller autodisposes, and a delete has to
     // outlive the menu entry that started it. It also says when another
     // action on this goal is still running.
-    final isBusy = ref
-        .watch(goalActionControllerProvider(goal.id))
-        .isLoading;
+    final isBusy = ref.watch(goalActionControllerProvider(goal.id)).isLoading;
 
     final colors = Theme.of(context).colorScheme;
     return PopupMenuButton<_GoalMenuAction>(
@@ -36,10 +34,7 @@ class GoalMenu extends ConsumerWidget {
       enabled: !isBusy,
       onSelected: (action) => _run(context, ref, action),
       itemBuilder: (context) => [
-        const PopupMenuItem(
-          value: _GoalMenuAction.edit,
-          child: Text('Edit'),
-        ),
+        const PopupMenuItem(value: _GoalMenuAction.edit, child: Text('Edit')),
         PopupMenuItem(
           value: _GoalMenuAction.delete,
           child: Text('Delete', style: TextStyle(color: colors.error)),

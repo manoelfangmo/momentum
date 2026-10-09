@@ -111,7 +111,9 @@ void main() {
 
   test('a rejected delete lands in the state', () async {
     when(goals.deleteGoal(any)).thenThrow(
-      const PermissionException('Only the member who set a goal can delete it.'),
+      const PermissionException(
+        'Only the member who set a goal can delete it.',
+      ),
     );
 
     await controller(_goal.id).delete(_goal);

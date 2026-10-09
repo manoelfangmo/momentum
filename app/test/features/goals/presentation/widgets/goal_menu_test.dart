@@ -134,10 +134,7 @@ void main() {
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
 
-    expect(
-      find.text("Delete 'Run 5k'? This can't be undone."),
-      findsOneWidget,
-    );
+    expect(find.text("Delete 'Run 5k'? This can't be undone."), findsOneWidget);
     verifyNever(goals.deleteGoal(any));
   });
 
@@ -166,7 +163,9 @@ void main() {
 
   testWidgets('a rejected delete toasts the reason instead', (tester) async {
     when(goals.deleteGoal(any)).thenThrow(
-      const PermissionException('Only the member who set a goal can delete it.'),
+      const PermissionException(
+        'Only the member who set a goal can delete it.',
+      ),
     );
 
     await pumpMenu(tester, goal: goalWith(), viewer: _ada);

@@ -173,11 +173,7 @@ void main() {
     });
 
     test('a non-owner is a permission failure', () async {
-      raise(
-        Rpc.updateGoalTitle,
-        code: 'M0014',
-        message: 'only_owner_can_edit',
-      );
+      raise(Rpc.updateGoalTitle, code: 'M0014', message: 'only_owner_can_edit');
 
       await expectLater(
         repository.updateTitle('goal-1', 'Long run'),

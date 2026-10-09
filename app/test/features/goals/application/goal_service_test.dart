@@ -232,7 +232,10 @@ void main() {
     test('offers nothing while there is no member to compare against', () {
       final container = containerFor(null);
 
-      expect(container.read(canManageGoalProvider(goalOwnedBy(_ada.id))), isFalse);
+      expect(
+        container.read(canManageGoalProvider(goalOwnedBy(_ada.id))),
+        isFalse,
+      );
     });
   });
 }

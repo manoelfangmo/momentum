@@ -51,7 +51,10 @@ class GoalTile extends ConsumerWidget {
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
-          children: [GoalActions(goal: goal), GoalMenu(goal: goal)],
+          children: [
+            GoalActions(goal: goal),
+            GoalMenu(goal: goal),
+          ],
         ),
       ),
     );
