@@ -26,14 +26,22 @@
 --   M0003 goal_not_found
 --   M0005 cannot_verify_own_goal
 --   M0008 not_authenticated
---   M0010 only_owner_can_change_status
+--   M0010 not_allowed_to_change_status
 --   M0011 goal_verified_locked
 --   M0012 goal_not_complete
 --   M0013 goal_already_verified
---   M0014 only_owner_can_edit
---   M0015 only_owner_can_delete
+--   M0014 not_allowed_to_edit
+--   M0015 not_allowed_to_delete
 --   M0016 invalid_title
+--   M0017 assigned_goal_admin_only
+--   M0018 admin_only
+--   M0019 cannot_unverify_own_goal
+--   M0020 goal_not_verified
+--   M0021 member_not_in_group
 --   42501 permission denied, or a row-level security violation
+--
+-- Ada creates the group, so Ada is its admin and Ben is not. Sections 1 to 9
+-- are the member rules; section 10 is what the admin may do on top of them.
 
 -- ---------------------------------------------------------------------------
 -- Setup. Ada and Ben. The auth trigger inserts their members rows.
@@ -840,7 +848,7 @@ begin
 
   begin
     perform public.set_goal_status(target, 'in_progress');
-    raise exception 'expected only_owner_can_change_status';
+    raise exception 'expected not_allowed_to_change_status';
   exception
     when sqlstate 'M0010' then
       null;
@@ -854,7 +862,7 @@ begin
       null;
   end;
 
-  raise notice 'ok: only_owner_can_change_status, goal_not_complete';
+  raise notice 'ok: not_allowed_to_change_status, goal_not_complete';
 end;
 $$;
 
@@ -1074,13 +1082,13 @@ begin
 
   begin
     perform public.set_goal_status(target, 'complete');
-    raise exception 'expected only_owner_can_change_status on goal two';
+    raise exception 'expected not_allowed_to_change_status on goal two';
   exception
     when sqlstate 'M0010' then
       null;
   end;
 
-  raise notice 'ok: only_owner_can_change_status on goal two';
+  raise notice 'ok: not_allowed_to_change_status on goal two';
 end;
 $$;
 
@@ -1183,7 +1191,7 @@ begin
 
   begin
     perform public.update_goal_title(target, 'Ben renames it');
-    raise exception 'expected only_owner_can_edit';
+    raise exception 'expected not_allowed_to_edit';
   exception
     when sqlstate 'M0014' then
       null;
@@ -1191,7 +1199,7 @@ begin
 
   begin
     perform public.delete_goal(target);
-    raise exception 'expected only_owner_can_delete';
+    raise exception 'expected not_allowed_to_delete';
   exception
     when sqlstate 'M0015' then
       null;
@@ -1201,17 +1209,49 @@ begin
     raise exception 'Ben changed the title';
   end if;
 
-  raise notice 'ok: only_owner_can_edit, only_owner_can_delete';
+  raise notice 'ok: not_allowed_to_edit, not_allowed_to_delete';
+end;
+$$;
+
+-- The verified lock no longer catches Ada: she created the group, so she is
+-- its admin and may rename or delete anything (section 10). The owner half of
+-- the rule needs an owner who is not the admin. Ben makes a goal, completes
+-- it, Ada verifies it, and then it is closed to him.
+do $$
+declare
+  ben uuid := '22222222-2222-4222-8222-222222222222';
+  target uuid;
+begin
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', ben, 'role', 'authenticated')::text,
+    true
+  );
+  execute 'set local role authenticated';
+
+  insert into public.goals (owner_id, group_id, title, type, deadline)
+  values (
+    ben,
+    public.my_group_id(),
+    'Ben goal one',
+    'daily',
+    timestamptz '2026-10-08 03:59:59.999+00'
+  )
+  returning id into target;
+
+  perform public.set_goal_status(target, 'complete');
+  perform set_config('momentum.ben_goal_one', target::text, false);
+
+  raise notice 'ok: Ben inserted and completed his own goal';
 end;
 $$;
 
 do $$
 declare
   ada uuid := '11111111-1111-4111-8111-111111111111';
-  verified_goal uuid;
+  target uuid := current_setting('momentum.ben_goal_one')::uuid;
+  updated public.goals;
 begin
-  select id into verified_goal from public.goals where title = 'Ada goal one';
-
   perform set_config(
     'request.jwt.claims',
     json_build_object('sub', ada, 'role', 'authenticated')::text,
@@ -1219,8 +1259,29 @@ begin
   );
   execute 'set local role authenticated';
 
+  updated := public.verify_goal(target);
+  if not updated.verified then
+    raise exception 'Ada should have verified Ben''s goal';
+  end if;
+
+  raise notice 'ok: Ada verified Ben''s goal';
+end;
+$$;
+
+do $$
+declare
+  ben uuid := '22222222-2222-4222-8222-222222222222';
+  target uuid := current_setting('momentum.ben_goal_one')::uuid;
+begin
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', ben, 'role', 'authenticated')::text,
+    true
+  );
+  execute 'set local role authenticated';
+
   begin
-    perform public.update_goal_title(verified_goal, 'Renamed after verify');
+    perform public.update_goal_title(target, 'Renamed after verify');
     raise exception 'expected goal_verified_locked from update_goal_title';
   exception
     when sqlstate 'M0011' then
@@ -1228,14 +1289,14 @@ begin
   end;
 
   begin
-    perform public.delete_goal(verified_goal);
+    perform public.delete_goal(target);
     raise exception 'expected goal_verified_locked from delete_goal';
   exception
     when sqlstate 'M0011' then
       null;
   end;
 
-  if (select count(*) from public.goals where id = verified_goal) <> 1 then
+  if (select count(*) from public.goals where id = target) <> 1 then
     raise exception 'the verified goal was deleted';
   end if;
 
@@ -1576,5 +1637,599 @@ begin
   end;
 
   raise notice 'ok: anon cannot edit or delete';
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 10. The admin. Ada created the group, so she is it and Ben is not.
+--     Assigning, un-verifying, and editing or deleting any goal are hers
+--     alone; an assigned goal is out of its owner's hands except for status.
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  ada uuid := '11111111-1111-4111-8111-111111111111';
+begin
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', ada, 'role', 'authenticated')::text,
+    true
+  );
+  execute 'set local role authenticated';
+
+  if not public.is_group_admin() then
+    raise exception 'Ada created the group and should be its admin';
+  end if;
+end;
+$$;
+
+do $$
+declare
+  ben uuid := '22222222-2222-4222-8222-222222222222';
+  own_verified uuid := current_setting('momentum.ben_goal_one')::uuid;
+begin
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', ben, 'role', 'authenticated')::text,
+    true
+  );
+  execute 'set local role authenticated';
+
+  if public.is_group_admin() then
+    raise exception 'Ben joined the group and should not be its admin';
+  end if;
+
+  begin
+    perform public.assign_goal(
+      ben,
+      'Ben assigns himself work',
+      'daily',
+      timestamptz '2026-10-10 03:59:59.999+00'
+    );
+    raise exception 'expected admin_only from assign_goal';
+  exception
+    when sqlstate 'M0018' then
+      null;
+  end;
+
+  -- Owner and verified both hold here; admin_only is still what he gets.
+  begin
+    perform public.unverify_goal(own_verified);
+    raise exception 'expected admin_only from unverify_goal';
+  exception
+    when sqlstate 'M0018' then
+      null;
+  end;
+
+  raise notice 'ok: is_group_admin, admin_only on assign and un-verify';
+end;
+$$;
+
+do $$
+declare
+  ada uuid := '11111111-1111-4111-8111-111111111111';
+begin
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', ada, 'role', 'authenticated')::text,
+    true
+  );
+  execute 'set local role authenticated';
+
+  begin
+    perform public.assign_goal(
+      '99999999-9999-4999-8999-999999999999',
+      'For a stranger',
+      'daily',
+      timestamptz '2026-10-10 03:59:59.999+00'
+    );
+    raise exception 'expected member_not_in_group';
+  exception
+    when sqlstate 'M0021' then
+      null;
+  end;
+
+  begin
+    perform public.assign_goal(
+      '22222222-2222-4222-8222-222222222222',
+      '     ',
+      'daily',
+      timestamptz '2026-10-10 03:59:59.999+00'
+    );
+    raise exception 'expected invalid_title for spaces only';
+  exception
+    when sqlstate 'M0016' then
+      null;
+  end;
+
+  begin
+    perform public.assign_goal(
+      '22222222-2222-4222-8222-222222222222',
+      repeat('a', 141),
+      'daily',
+      timestamptz '2026-10-10 03:59:59.999+00'
+    );
+    raise exception 'expected invalid_title for 141 characters';
+  exception
+    when sqlstate 'M0016' then
+      null;
+  end;
+
+  raise notice 'ok: member_not_in_group, invalid_title on assign_goal';
+end;
+$$;
+
+do $$
+declare
+  ada uuid := '11111111-1111-4111-8111-111111111111';
+  ben uuid := '22222222-2222-4222-8222-222222222222';
+  ada_group uuid;
+  assigned public.goals;
+  seen int;
+begin
+  select group_id into ada_group from public.members where id = ada;
+
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', ada, 'role', 'authenticated')::text,
+    true
+  );
+  execute 'set local role authenticated';
+
+  assigned := public.assign_goal(
+    ben,
+    '  Ben assigned goal  ',
+    'daily',
+    timestamptz '2026-10-10 03:59:59.999+00'
+  );
+
+  if assigned.owner_id <> ben
+     or assigned.assigned_by <> ada
+     or assigned.group_id <> ada_group then
+    raise exception 'assigned goal went to % by % in %',
+      assigned.owner_id, assigned.assigned_by, assigned.group_id;
+  end if;
+  if assigned.title <> 'Ben assigned goal' then
+    raise exception 'assigned title was not trimmed, got "%"', assigned.title;
+  end if;
+  if assigned.status <> 'not_started'::public.goal_status
+     or assigned.verified then
+    raise exception 'assigned goal starts at % / verified %',
+      assigned.status, assigned.verified;
+  end if;
+
+  -- The A01 trigger reads assigned_by: set, so the event is assigned, and its
+  -- actor is the admin while its goal_owner_id is the member.
+  select count(*) into seen
+  from public.goal_events
+  where goal_id = assigned.id
+    and action = 'assigned'
+    and actor_id = ada
+    and goal_owner_id = ben
+    and goal_title = 'Ben assigned goal'
+    and new_status is null;
+  if seen <> 1 then
+    raise exception 'assign should log one assigned event, saw %', seen;
+  end if;
+
+  perform set_config('momentum.assigned_goal', assigned.id::text, false);
+
+  raise notice 'ok: admin assigned a goal to Ben';
+end;
+$$;
+
+do $$
+declare
+  ada uuid := '11111111-1111-4111-8111-111111111111';
+  mine public.goals;
+  renamed public.goals;
+  seen int;
+begin
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', ada, 'role', 'authenticated')::text,
+    true
+  );
+  execute 'set local role authenticated';
+
+  -- A goal the admin makes for herself is an own goal: assigned_by stays
+  -- null, the trigger logs created, and she can still rename it.
+  mine := public.assign_goal(
+    ada,
+    'Ada self assigned',
+    'weekly',
+    timestamptz '2026-10-12 03:59:59.999+00'
+  );
+
+  if mine.assigned_by is not null then
+    raise exception 'a self-assigned goal should have assigned_by null';
+  end if;
+
+  select count(*) into seen
+  from public.goal_events
+  where goal_id = mine.id
+    and action = 'created'
+    and actor_id = ada;
+  if seen <> 1 then
+    raise exception 'self-assign should log one created event, saw %', seen;
+  end if;
+
+  renamed := public.update_goal_title(mine.id, 'Ada self assigned, renamed');
+  if renamed.title <> 'Ada self assigned, renamed' then
+    raise exception 'the admin could not rename her own goal';
+  end if;
+
+  raise notice 'ok: admin assigning to herself makes a normal own goal';
+end;
+$$;
+
+do $$
+declare
+  ada uuid := '11111111-1111-4111-8111-111111111111';
+  ben uuid := '22222222-2222-4222-8222-222222222222';
+  assigned uuid := current_setting('momentum.assigned_goal')::uuid;
+  moved public.goals;
+  own uuid;
+begin
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', ben, 'role', 'authenticated')::text,
+    true
+  );
+  execute 'set local role authenticated';
+
+  -- The owner of an assigned goal keeps the status and nothing else.
+  begin
+    perform public.update_goal_title(assigned, 'Not my homework');
+    raise exception 'expected assigned_goal_admin_only from update_goal_title';
+  exception
+    when sqlstate 'M0017' then
+      null;
+  end;
+
+  begin
+    perform public.delete_goal(assigned);
+    raise exception 'expected assigned_goal_admin_only from delete_goal';
+  exception
+    when sqlstate 'M0017' then
+      null;
+  end;
+
+  moved := public.set_goal_status(assigned, 'in_progress');
+  if moved.status <> 'in_progress'::public.goal_status then
+    raise exception 'the owner should still move an assigned goal, got %',
+      moved.status;
+  end if;
+
+  -- assigned_by is the admin's to write: the insert policy rejects a member
+  -- who tries to dress their own goal up as one they were given.
+  begin
+    insert into public.goals (
+      owner_id, group_id, title, type, deadline, assigned_by
+    )
+    values (
+      ben,
+      public.my_group_id(),
+      'Pretend it was assigned',
+      'daily',
+      timestamptz '2026-10-10 03:59:59.999+00',
+      ada
+    );
+    raise exception 'expected RLS to reject assigned_by on a direct insert';
+  exception
+    when insufficient_privilege then
+      if sqlerrm not like '%row-level security%' then
+        raise;
+      end if;
+  end;
+
+  insert into public.goals (owner_id, group_id, title, type, deadline)
+  values (
+    ben,
+    public.my_group_id(),
+    'Ben goal two',
+    'daily',
+    timestamptz '2026-10-11 03:59:59.999+00'
+  )
+  returning id into own;
+
+  -- Unassigned and unverified, so his own rules still let him rename it.
+  perform public.update_goal_title(own, 'Ben goal two, renamed');
+  perform set_config('momentum.ben_goal_two', own::text, false);
+
+  raise notice 'ok: member keeps status on an assigned goal and nothing else';
+end;
+$$;
+
+do $$
+declare
+  ada uuid := '11111111-1111-4111-8111-111111111111';
+  assigned uuid := current_setting('momentum.assigned_goal')::uuid;
+  moved public.goals;
+  verified public.goals;
+  seen int;
+begin
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', ada, 'role', 'authenticated')::text,
+    true
+  );
+  execute 'set local role authenticated';
+
+  moved := public.set_goal_status(assigned, 'complete');
+  if moved.status <> 'complete'::public.goal_status then
+    raise exception 'the admin should move any status, got %', moved.status;
+  end if;
+
+  select count(*) into seen
+  from public.goal_events
+  where goal_id = assigned
+    and action = 'status_changed'
+    and actor_id = ada
+    and new_status = 'complete'::public.goal_status;
+  if seen <> 1 then
+    raise exception 'the admin status change should log one event, saw %', seen;
+  end if;
+
+  -- Verify is a member rule and the admin is a member: she did not own it,
+  -- and setting the status herself does not disqualify her.
+  verified := public.verify_goal(assigned);
+  if not verified.verified then
+    raise exception 'the admin should be able to verify a goal she does not own';
+  end if;
+
+  raise notice 'ok: admin changes status on any goal, then verifies it';
+end;
+$$;
+
+do $$
+declare
+  ada uuid := '11111111-1111-4111-8111-111111111111';
+  assigned uuid := current_setting('momentum.assigned_goal')::uuid;
+  ben_unverified uuid := current_setting('momentum.ben_goal_two')::uuid;
+  own_verified uuid;
+  unverified public.goals;
+  seen int;
+begin
+  select id into own_verified from public.goals where title = 'Ada goal one';
+
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', ada, 'role', 'authenticated')::text,
+    true
+  );
+  execute 'set local role authenticated';
+
+  begin
+    perform public.unverify_goal(own_verified);
+    raise exception 'expected cannot_unverify_own_goal';
+  exception
+    when sqlstate 'M0019' then
+      null;
+  end;
+
+  begin
+    perform public.unverify_goal(ben_unverified);
+    raise exception 'expected goal_not_verified';
+  exception
+    when sqlstate 'M0020' then
+      null;
+  end;
+
+  begin
+    perform public.unverify_goal('99999999-9999-4999-8999-999999999999');
+    raise exception 'expected goal_not_found from unverify_goal';
+  exception
+    when sqlstate 'M0003' then
+      null;
+  end;
+
+  unverified := public.unverify_goal(assigned);
+  if unverified.verified
+     or unverified.status <> 'complete'::public.goal_status then
+    raise exception 'un-verify returned status % verified %',
+      unverified.status, unverified.verified;
+  end if;
+
+  select count(*) into seen
+  from public.goal_events
+  where goal_id = assigned
+    and action = 'unverified'
+    and actor_id = ada
+    and new_status is null;
+  if seen <> 1 then
+    raise exception 'un-verify should log one unverified event, saw %', seen;
+  end if;
+
+  raise notice 'ok: cannot_unverify_own_goal, goal_not_verified, un-verified';
+end;
+$$;
+
+do $$
+declare
+  ben uuid := '22222222-2222-4222-8222-222222222222';
+  assigned uuid := current_setting('momentum.assigned_goal')::uuid;
+  moved public.goals;
+begin
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', ben, 'role', 'authenticated')::text,
+    true
+  );
+  execute 'set local role authenticated';
+
+  -- Un-verified means unlocked, not reset: the status the admin left is the
+  -- one the owner picks up from.
+  moved := public.set_goal_status(assigned, 'in_progress');
+  if moved.status <> 'in_progress'::public.goal_status then
+    raise exception 'an un-verified goal should move again, got %',
+      moved.status;
+  end if;
+
+  moved := public.set_goal_status(assigned, 'complete');
+  if moved.status <> 'complete'::public.goal_status then
+    raise exception 'back to complete returned %', moved.status;
+  end if;
+
+  raise notice 'ok: an un-verified goal takes status changes again';
+end;
+$$;
+
+do $$
+declare
+  ada uuid := '11111111-1111-4111-8111-111111111111';
+  ben uuid := '22222222-2222-4222-8222-222222222222';
+  assigned uuid := current_setting('momentum.assigned_goal')::uuid;
+  again public.goals;
+  renamed public.goals;
+  seen int;
+begin
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', ada, 'role', 'authenticated')::text,
+    true
+  );
+  execute 'set local role authenticated';
+
+  again := public.verify_goal(assigned);
+  if not again.verified then
+    raise exception 'an un-verified goal should be verifiable again';
+  end if;
+
+  -- Verified and assigned, which closes it to its owner and to no one else.
+  renamed := public.update_goal_title(assigned, 'Admin renamed it');
+  if renamed.title <> 'Admin renamed it' or not renamed.verified then
+    raise exception 'admin rename returned "%" verified %',
+      renamed.title, renamed.verified;
+  end if;
+
+  select count(*) into seen
+  from public.goal_events
+  where goal_id = assigned
+    and action = 'title_edited'
+    and actor_id = ada
+    and goal_title = 'Admin renamed it';
+  if seen <> 1 then
+    raise exception 'the admin rename should log one event, saw %', seen;
+  end if;
+
+  perform public.delete_goal(assigned);
+
+  if (select count(*) from public.goals where id = assigned) <> 0 then
+    raise exception 'the admin should have deleted the verified goal';
+  end if;
+
+  select count(*) into seen
+  from public.goal_events
+  where goal_id = assigned;
+  if seen <> 10 then
+    raise exception 'the deleted goal should keep its ten events, saw %', seen;
+  end if;
+
+  select count(*) into seen
+  from public.goal_events
+  where goal_id = assigned
+    and action = 'deleted'
+    and actor_id = ada
+    and goal_owner_id = ben;
+  if seen <> 1 then
+    raise exception 'the delete should log one deleted event, saw %', seen;
+  end if;
+
+  raise notice 'ok: admin re-verified, renamed, and deleted a verified goal';
+end;
+$$;
+
+-- Out of the group, the admin questions never come up: an outsider cannot see
+-- the goal to be told anything about it, and has no group to be admin of.
+update public.members
+set group_id = null
+where id = '22222222-2222-4222-8222-222222222222';
+
+do $$
+declare
+  ben uuid := '22222222-2222-4222-8222-222222222222';
+  ada_verified uuid;
+begin
+  select id into ada_verified from public.goals where title = 'Ada goal one';
+
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', ben, 'role', 'authenticated')::text,
+    true
+  );
+  execute 'set local role authenticated';
+
+  if public.is_group_admin() then
+    raise exception 'a member with no group is no one''s admin';
+  end if;
+
+  begin
+    perform public.unverify_goal(ada_verified);
+    raise exception 'expected goal_not_found from unverify_goal (outsider)';
+  exception
+    when sqlstate 'M0003' then
+      null;
+  end;
+
+  begin
+    perform public.assign_goal(
+      ben,
+      'Outsider assigns',
+      'daily',
+      timestamptz '2026-10-10 03:59:59.999+00'
+    );
+    raise exception 'expected admin_only from assign_goal (outsider)';
+  exception
+    when sqlstate 'M0018' then
+      null;
+  end;
+
+  raise notice 'ok: outsider is not an admin and sees no goal';
+end;
+$$;
+
+update public.members
+set group_id = (
+  select group_id
+  from public.members
+  where id = '11111111-1111-4111-8111-111111111111'
+)
+where id = '22222222-2222-4222-8222-222222222222';
+
+do $$
+begin
+  execute 'set local role anon';
+
+  begin
+    perform public.is_group_admin();
+    raise exception 'expected anon execute denied on is_group_admin';
+  exception
+    when insufficient_privilege then
+      null;
+  end;
+
+  begin
+    perform public.unverify_goal('99999999-9999-4999-8999-999999999999');
+    raise exception 'expected anon execute denied on unverify_goal';
+  exception
+    when insufficient_privilege then
+      null;
+  end;
+
+  begin
+    perform public.assign_goal(
+      '99999999-9999-4999-8999-999999999999',
+      'Anon',
+      'daily',
+      timestamptz '2026-10-10 03:59:59.999+00'
+    );
+    raise exception 'expected anon execute denied on assign_goal';
+  exception
+    when insufficient_privilege then
+      null;
+  end;
+
+  raise notice 'ok: anon cannot assign or un-verify';
 end;
 $$;
