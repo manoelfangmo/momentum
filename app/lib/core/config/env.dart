@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Host the Android emulator uses to reach the development machine's loopback.
 const androidEmulatorLoopbackHost = '10.0.2.2';
@@ -14,9 +13,7 @@ String rewriteSupabaseUrl(String url, {required bool isAndroid}) {
   return uri.replace(host: androidEmulatorLoopbackHost).toString();
 }
 
-/// Supabase connection settings.
-///
-/// Precedence: `--dart-define=SUPABASE_URL` / `SUPABASE_ANON_KEY`, then `app/.env`.
+/// Supabase connection settings from `--dart-define`.
 abstract final class Env {
   static const supabaseUrlDefine = String.fromEnvironment('SUPABASE_URL');
   static const supabaseAnonKeyDefine = String.fromEnvironment(
@@ -38,10 +35,8 @@ abstract final class Env {
 
   static String _required(String key, String fromDefine) {
     if (fromDefine.isNotEmpty) return fromDefine;
-    final fromFile = dotenv.maybeGet(key);
-    if (fromFile != null && fromFile.isNotEmpty) return fromFile;
     throw StateError(
-      '$key is missing. Set it in app/.env or pass --dart-define=$key=...',
+      '$key is missing. Pass --dart-define=$key=...',
     );
   }
 }
