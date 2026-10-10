@@ -8,6 +8,7 @@ Stack:
 - Supabase running LOCALLY via Supabase CLI (supabase start). Migrations in supabase/migrations.
 - supabase_flutter, flutter_riverpod + riverpod_annotation + riverpod_generator (code gen),
   go_router, freezed + json_serializable (field_rename: snake in build.yaml), build_runner.
+- Tests: flutter_test + mockito (code gen) for every test double.
 
 Architecture (follow ARCHITECTURE.md exactly). Feature-first; each feature in
 app/lib/features/<feature>/ with these layers. Dependencies point down only:
@@ -28,7 +29,7 @@ app/lib/features/<feature>/ with these layers. Dependencies point down only:
 
 Shared code in app/lib/core/:
   constants/     theme, environment.dart (local Supabase URL + anon key; 10.0.2.2 on Android)
-  database/      table/column/RPC name constants (GoalsTable.deadline, Rpc.verifyGoalComplete).
+  database/      table/column/RPC name constants (GoalsTable.deadline, Rpc.setGoalStatus).
                  Repositories never use string literals for table or column names.
   domain/        types shared by several features: Member, GoalType, Period
   routing/       go_router.dart, app_routes.dart (AppRoutes paths + publicRoutes),
@@ -44,8 +45,11 @@ Conventions:
   cross-feature -> the service. Afterwards ref.invalidate every provider showing old data.
 - Repositories throw AppException subclasses (core/utils/app_exception.dart); widgets
   handle AsyncValue with .when(data, loading, error).
-- Never edit *.g.dart / *.freezed.dart. Regenerate with
+- Never edit *.g.dart / *.freezed.dart / *.mocks.dart. Regenerate with
   dart run build_runner build --delete-conflicting-outputs
+- Tests mirror lib/ under app/test/ and never hit a running Supabase stack. Test doubles are
+  mockito mocks, never hand-written fakes: add a MockSpec to the @GenerateNiceMocks list in
+  app/test/mocks.dart, regenerate, then inject with provider.overrideWithValue(MockThing()).
 - Times: timestamptz stored UTC; entities convert to local in fromJson; commands convert to
   UTC in toJson. Periods computed in local time; weeks start Monday; one timezone per group.
 - A goal's deadline = last instant of its period (period end minus 1 ms). A goal belongs to
