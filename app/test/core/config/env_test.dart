@@ -1,6 +1,4 @@
 import 'package:app/core/config/env.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -23,16 +21,26 @@ void main() {
     );
   });
 
-  test('reads the local Supabase URL and anon key', () async {
-    TestWidgetsFlutterBinding.ensureInitialized();
-    await dotenv.load(fileName: '.env');
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
-
-    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
-    expect(Env.supabaseUrl, 'http://127.0.0.1:54321');
-    expect(Env.supabaseAnonKey, isNotEmpty);
-
-    debugDefaultTargetPlatformOverride = TargetPlatform.android;
-    expect(Env.supabaseUrl, 'http://10.0.2.2:54321');
+  test('throws when --dart-define values are missing', () {
+    expect(
+      () => Env.supabaseUrl,
+      throwsA(
+        isA<StateError>().having(
+          (error) => error.message,
+          'message',
+          contains('--dart-define=SUPABASE_URL='),
+        ),
+      ),
+    );
+    expect(
+      () => Env.supabaseAnonKey,
+      throwsA(
+        isA<StateError>().having(
+          (error) => error.message,
+          'message',
+          contains('--dart-define=SUPABASE_ANON_KEY='),
+        ),
+      ),
+    );
   });
 }
