@@ -52,7 +52,7 @@ supabase/
 └── seed.sql
 ```
 
-Every feature uses the same four folders. A small feature can leave out `application/` when nothing needs to coordinate more than one repository. `stats` has no `data/` folder at all. It computes from goals other features already loaded, and `admin` is `presentation/` only: it is a second way to read goals the goals feature already fetches.
+Every feature uses the same four folders. A small feature can leave out `application/` when nothing needs to coordinate more than one repository. `stats` has no `data/` folder at all. It computes from goals other features already loaded, and `admin` is `presentation/` only: it is a second way to read goals the goals feature already fetches, and it assigns one through that feature's `GoalService`.
 
 `app/lib/core/domain/` is for types that more than one feature needs. `Member` is used by auth, groups, and goals. `GoalType` and `Period` are used by goals, history, and stats. A type used by only one feature stays in that feature's `domain/`.
 
@@ -157,14 +157,17 @@ A simpler read skips the controller. The group page watches `groupMembersProvide
 
 ```
 features/admin/presentation/
-├── admin_page.dart                   # Day / Week / Month / Year tabs
+├── admin_page.dart                     # Day / Week / Month / Year tabs, and the assign button
 ├── controllers/
-│   ├── admin_view_controller.dart    # the day the Day tab is on
-│   └── admin_tab_controller.dart     # adminPeriod + adminTabData
+│   ├── admin_view_controller.dart      # the day the Day tab is on
+│   ├── admin_tab_controller.dart       # adminPeriod + adminTabData
+│   └── assign_goal_form_notifier.dart  # the draft behind the assign sheet
 ├── models/
-│   └── member_goals.dart             # one member and their goals
+│   ├── member_goals.dart               # one member and their goals
+│   └── assign_goal_form_state.dart     # who the goal is for, and its title
 └── widgets/
-    └── admin_tab_view.dart           # the member sections of one tab
+    ├── admin_tab_view.dart             # the member sections of one tab
+    └── assign_goal_sheet.dart          # give one member one goal
 ```
 
 `adminTabData(type)` is the goals tabs' `goalTabData` read sideways. It takes the period from `adminPeriod(type)` — the selected day on Day, the period containing now on the other three — then awaits `groupGoalsForPeriodProvider` and `groupMembersProvider` together and files each goal under its owner. Every member gets a `MemberGoals`, including the ones with nothing set, because an empty section is what the admin is looking for. The admin's own section is first, then everyone else in the order the members read returns them, which is by name.
@@ -172,6 +175,10 @@ features/admin/presentation/
 `AdminViewController` holds the Day tab's date and nothing else. It is deliberately not a field on `GoalsViewController`: the admin moves between the two screens to compare one member's view with the group's, and a date picked on one has no business moving the other. Week, Month and Year have no date to move at all — ended periods are History's, and the admin has no History.
 
 The sections are drawn with the widgets that already exist: `GoalTile` for each goal, so the admin gets whatever `goalPermissions` grants them on another member's goal, and `CompletionBadge(completionFor(goals))` for each member's rate. The Day tab's date control is `DaySelector` in `core/widgets/`, which holds nothing: it takes the day on screen and gives back the one chosen, so the goals tabs and the admin tabs can each point it at their own notifier.
+
+`AssignGoalSheet` is the one thing the admin feature writes, and the only part of it that is not a read of somebody else's provider. The page's floating button opens it on the type of the tab in front, the way the goals page opens `CreateGoalSheet`. The sheet is that sheet plus the field it has no use for: a dropdown of `groupMembersProvider` with the admin listed as "Me". Nothing is selected when it opens, because assigning to the wrong person leaves a goal somebody has to delete. The deadline is shown and not chosen — both sheets render `CurrentPeriodDueLabel`, which reads `clockProvider` and names the end of the current period, so the Day tab's date picker never reaches it.
+
+`AssignGoalFormNotifier` holds the draft and submits it through `GoalService.assignGoal`, then invalidates `groupGoalsForPeriodProvider` and `goalsForPeriodProvider`: the new goal lands on the admin tab it was made from and on its owner's own tab. The admin picking themselves is not a branch in Dart. `assign_goal` writes `assigned_by` only when the owner is somebody else, so a goal the admin sets for themselves comes back as a normal own goal.
 
 ## Writing data: two patterns
 
@@ -204,7 +211,7 @@ Future<void> submit({required GoalType type}) async {
 
 The service reads the current member, computes `Period.containing(now, type).deadline`, builds a `CreateGoalCommand`, and calls the repository. The notifier only holds what the user typed (`CreateGoalFormState`).
 
-`GoalService.assignGoal` is the admin's version of the same shape and is there for the same reason: it computes the deadline from the clock, builds an `AssignGoalCommand`, and calls `assign_goal`. It takes the owner because the admin picks one, and the deadline is always the end of the current period — never the day the Day tab happens to be showing.
+`GoalService.assignGoal` is the admin's version of the same shape and is there for the same reason: it computes the deadline from the clock, builds an `AssignGoalCommand`, and calls `assign_goal`. It takes the owner because the admin picks one, and the deadline is always the end of the current period — never the day the Day tab happens to be showing. It takes no group and makes no check that the caller is the admin: the RPC reads both from the caller and refuses anyone else.
 
 Put logic in `application/` when it:
 
@@ -213,6 +220,8 @@ Put logic in `application/` when it:
 - decides something from data owned by another feature.
 
 `goalPermissions` is the third case. It answers what the signed-in member may do to one goal, as five independent booleans on a `GoalPermissions`: `canChangeStatus`, `canVerify`, `canUnverify`, `canEdit`, `canDelete`. Independent rather than one choice, because they combine — the admin looking at another member's complete goal may move its status, verify it, rename it, and delete it, all at once. `GoalActions` draws a control for each flag it finds set and a lock when a verified goal offers none; `GoalMenu` shows itself only when `canEdit` or `canDelete` is. Neither widget compares member ids.
+
+Because they combine, `GoalTile` gives them two different places. `GoalMenu` is one icon and sits in the tile's trailing slot. `GoalActions` is a `Wrap` in a row of its own under the tile, which is what keeps a status picker, a Verify and a menu on the same goal from squeezing the title off the card. The flags the admin alone can hold are the ones that say so in the copy: un-verifying confirms that the goal stays complete and can be verified again, and deleting a verified goal adds that it removes a verified completion. `AssignedByLabel` is the other side of that reach — on a goal where `Goal.isAssigned`, it names the admin from `groupMembersProvider`, so the owner who finds no menu can see why.
 
 The rule itself is `permissionsFor(goal, viewerId:, isAdmin:)`, a pure function in `domain/`. The provider exists only to feed it the two facts it cannot reach from a `Goal`: the signed-in member from auth, and `isGroupAdminProvider` from groups. An admin flag that has not resolved yet counts as not the admin, so the first frame never offers a control the viewer cannot use.
 

@@ -177,7 +177,24 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text("Delete 'Run 5k'? This can't be undone."), findsOneWidget);
+    expect(find.text('This removes a verified completion.'), findsNothing);
     verifyNever(goals.deleteGoal(any));
+  });
+
+  testWidgets("Delete on a verified goal says what the admin is taking", (
+    tester,
+  ) async {
+    await pumpMenu(
+      tester,
+      goal: goalWith(status: GoalStatus.complete, verified: true),
+      viewer: _sam,
+      isAdmin: true,
+    );
+    await openMenu(tester);
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('This removes a verified completion.'), findsOneWidget);
   });
 
   testWidgets('cancelling the confirm keeps the goal', (tester) async {

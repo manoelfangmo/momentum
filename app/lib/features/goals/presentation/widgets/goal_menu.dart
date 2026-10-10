@@ -60,7 +60,10 @@ class GoalMenu extends ConsumerWidget {
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => _DeleteDialog(title: goal.title),
+      // Only the admin can get this far on a verified goal, so the extra
+      // line needs no second check for who is asking.
+      builder: (context) =>
+          _DeleteDialog(title: goal.title, wasVerified: goal.verified),
     );
     if (!context.mounted || confirmed != true) return;
 
@@ -82,15 +85,29 @@ class GoalMenu extends ConsumerWidget {
 enum _GoalMenuAction { edit, delete }
 
 class _DeleteDialog extends StatelessWidget {
-  const _DeleteDialog({required this.title});
+  const _DeleteDialog({required this.title, required this.wasVerified});
 
   final String title;
+
+  /// Deleting takes a completion somebody else signed off on out of the
+  /// group's numbers, which is worth saying before it happens.
+  final bool wasVerified;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return AlertDialog(
-      content: Text("Delete '$title'? This can't be undone."),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Delete '$title'? This can't be undone."),
+          if (wasVerified) ...[
+            const SizedBox(height: 8),
+            const Text('This removes a verified completion.'),
+          ],
+        ],
+      ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),

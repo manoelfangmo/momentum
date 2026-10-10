@@ -1,12 +1,11 @@
 import 'package:app/core/domain/domain.dart';
-import 'package:app/core/utils/providers.dart';
 import 'package:app/core/utils/toasts.dart';
 import 'package:app/core/widgets/submit_button.dart';
 import 'package:app/features/goals/presentation/controllers/create_goal_form_notifier.dart';
 import 'package:app/features/goals/presentation/validators/goal_validators.dart';
+import 'package:app/features/goals/presentation/widgets/current_period_due_label.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 /// Opens the new goal sheet for [type], the type of the tab it was opened
 /// from. Completes once the sheet is gone, whether it saved or was closed.
@@ -63,7 +62,6 @@ class _CreateGoalSheetState extends ConsumerState<CreateGoalSheet> {
     // keeps the draft alive between keystrokes. Watching `.notifier` rather
     // than the state means typing does not rebuild the sheet.
     final form = ref.watch(createGoalFormProvider.notifier);
-    final period = Period.containing(ref.watch(clockProvider)(), widget.type);
     final theme = Theme.of(context);
 
     return Padding(
@@ -92,12 +90,7 @@ class _CreateGoalSheetState extends ConsumerState<CreateGoalSheet> {
                   onFieldSubmitted: (_) => _submit(),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  'Due: ${_dueLabel(widget.type, period.deadline)}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
+                CurrentPeriodDueLabel(type: widget.type),
                 const SizedBox(height: 20),
                 SubmitButton(
                   label: 'Save',
@@ -112,19 +105,3 @@ class _CreateGoalSheetState extends ConsumerState<CreateGoalSheet> {
     );
   }
 }
-
-/// "end of this week (Sun, Oct 11)".
-///
-/// The period containing now, which is where a new goal lands whatever day the
-/// Day tab happens to be showing.
-String _dueLabel(GoalType type, DateTime deadline) {
-  final when = switch (type) {
-    GoalType.daily => 'today',
-    GoalType.weekly => 'this week',
-    GoalType.monthly => 'this month',
-    GoalType.yearly => 'this year',
-  };
-  return 'end of $when (${_deadlineDay.format(deadline)})';
-}
-
-final _deadlineDay = DateFormat('EEE, MMM d', 'en_US');

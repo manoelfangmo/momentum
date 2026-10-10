@@ -1,5 +1,6 @@
 import 'package:app/core/utils/providers.dart';
 import 'package:app/features/goals/domain/goal.dart';
+import 'package:app/features/goals/presentation/widgets/assigned_by_label.dart';
 import 'package:app/features/goals/presentation/widgets/goal_actions.dart';
 import 'package:app/features/goals/presentation/widgets/goal_menu.dart';
 import 'package:app/features/goals/presentation/widgets/goal_status_chip.dart';
@@ -8,11 +9,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-/// One goal in a list: what it is, when it is due, and where it stands.
+/// One goal in a list: what it is, when it is due, where it stands, and who
+/// asked for it. History and the admin tabs render the same tile.
 ///
-/// The trailing slot carries the one action the viewer may take and, for the
-/// owner of an unverified goal, the rename/delete menu. History renders the
-/// same tile, so both work there too.
+/// The rename/delete menu is in the trailing slot, where one icon always
+/// fits. The actions get a row of their own under the tile instead: the
+/// admin can be owed a status picker, a Verify and a menu on the same goal,
+/// and three controls beside the title squeeze it to nothing.
 ///
 /// The clock comes from [clockProvider] because whether a goal reads as
 /// overdue is a fact about now, and tests freeze now.
@@ -28,34 +31,41 @@ class GoalTile extends ConsumerWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
-      child: ListTile(
-        title: Text(goal.title),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Text(
-                'Due ${_deadlineLabel.format(goal.deadline)}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            title: Text(goal.title),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        'Due ${_deadlineLabel.format(goal.deadline)}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      GoalStatusChip(status: goal.status),
+                      VerifiedBadge(goal: goal),
+                      if (goal.isOverdue(now)) const _OverdueBadge(),
+                    ],
+                  ),
+                  AssignedByLabel(goal: goal),
+                ],
               ),
-              GoalStatusChip(status: goal.status),
-              VerifiedBadge(goal: goal),
-              if (goal.isOverdue(now)) const _OverdueBadge(),
-            ],
+            ),
+            trailing: GoalMenu(goal: goal),
           ),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            GoalActions(goal: goal),
-            GoalMenu(goal: goal),
-          ],
-        ),
+          GoalActions(goal: goal),
+        ],
       ),
     );
   }

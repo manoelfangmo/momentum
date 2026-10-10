@@ -1,6 +1,7 @@
 import 'package:app/core/domain/domain.dart';
 import 'package:app/core/utils/providers.dart';
 import 'package:app/features/admin/presentation/admin_page.dart';
+import 'package:app/features/admin/presentation/widgets/assign_goal_sheet.dart';
 import 'package:app/features/auth/data/member_repository.dart';
 import 'package:app/features/goals/data/goals_repository.dart';
 import 'package:app/features/goals/domain/goal.dart';
@@ -74,9 +75,31 @@ void main() {
     for (final type in GoalType.values) {
       expect(find.text(type.label), findsOneWidget);
     }
-    // Every tab is the whole group, and assigning comes later.
+    // Every tab is the whole group, so there is nobody to filter down to.
     expect(find.byType(MemberPicker), findsNothing);
-    expect(find.byType(FloatingActionButton), findsNothing);
+  });
+
+  testWidgets('the assign button names the tab in front', (tester) async {
+    await pumpPage(tester);
+    expect(find.text('Assign Day goal'), findsOneWidget);
+
+    await tester.tap(find.text('Month'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Assign Month goal'), findsOneWidget);
+    expect(find.text('Assign Day goal'), findsNothing);
+  });
+
+  testWidgets('the assign button opens the sheet on that tab', (tester) async {
+    await pumpPage(tester);
+    await tester.tap(find.text('Week'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    // The tab's type, not the Day one the page opened on.
+    expect(find.byType(AssignGoalSheet), findsOneWidget);
+    expect(find.text('Due: end of this week (Sun, Oct 11)'), findsOneWidget);
   });
 
   testWidgets('each tab shows its own period, for everyone', (tester) async {

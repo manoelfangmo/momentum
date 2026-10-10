@@ -7,7 +7,7 @@ import 'package:app/features/groups/data/groups_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// What the viewer may do to [goal] from the tile.
+/// What the viewer may do to [goal], as a row under the tile.
 ///
 /// Permissions come from [goalPermissionsProvider], so this widget never
 /// compares member ids or works out who the admin is. They are not
@@ -15,6 +15,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// both a status picker and a Verify. Status changes go straight to the
 /// picker; verifying and un-verifying sit behind a confirm because each one
 /// moves a goal someone else owns.
+///
+/// Laid out as a [Wrap] rather than a [Row] because the number of controls
+/// is not fixed, and a narrow screen should drop the last one to a second
+/// line instead of overflowing. The padding is here rather than on the tile
+/// so a viewer with nothing on offer takes up no space at all.
 class GoalActions extends ConsumerWidget {
   const GoalActions({super.key, required this.goal});
 
@@ -50,14 +55,25 @@ class GoalActions extends ConsumerWidget {
     // empty space, which is the one case worth drawing.
     if (controls.isEmpty) {
       if (!goal.verified) return const SizedBox.shrink();
-      return Icon(
-        Icons.lock_outline,
-        size: 20,
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      controls.add(
+        Icon(
+          Icons.lock_outline,
+          size: 20,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       );
     }
 
-    return Row(mainAxisSize: MainAxisSize.min, spacing: 4, children: controls);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Wrap(
+        alignment: WrapAlignment.end,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 8,
+        runSpacing: 4,
+        children: controls,
+      ),
+    );
   }
 
   Future<void> _confirmVerify(BuildContext context, WidgetRef ref) async {
