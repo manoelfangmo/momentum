@@ -81,10 +81,7 @@ class _PickerButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_selectedName()),
-            const Icon(Icons.arrow_drop_down),
-          ],
+          children: [Text(_selectedName()), const Icon(Icons.arrow_drop_down)],
         ),
       ),
     );

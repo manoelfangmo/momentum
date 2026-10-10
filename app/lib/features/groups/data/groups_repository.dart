@@ -140,3 +140,21 @@ Future<Group> currentGroup(Ref ref) async {
 @riverpod
 Future<List<Member>> groupMembers(Ref ref, String groupId) =>
     ref.watch(groupsRepositoryProvider).fetchMembers(groupId);
+
+/// Whether the signed-in member is the admin of their group.
+///
+/// The admin is whoever created the group, so there is nothing to read but
+/// `groups.created_by`: no admin column, no admin table, one per group, no
+/// transfer. `is_group_admin()` answers the same question in SQL, which is
+/// what actually guards the admin RPCs; this decides what the app offers.
+///
+/// False rather than an error for a member with no group — they are on
+/// onboarding, where there is no admin to be.
+@riverpod
+Future<bool> isGroupAdmin(Ref ref) async {
+  final member = await ref.watch(currentMemberProvider.future);
+  if (member == null || member.groupId == null) return false;
+
+  final group = await ref.watch(currentGroupProvider.future);
+  return group.createdBy == member.id;
+}

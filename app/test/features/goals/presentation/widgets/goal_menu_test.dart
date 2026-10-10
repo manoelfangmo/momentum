@@ -8,6 +8,7 @@ import 'package:app/features/goals/data/goals_repository.dart';
 import 'package:app/features/goals/domain/goal.dart';
 import 'package:app/features/goals/domain/goal_status.dart';
 import 'package:app/features/goals/presentation/widgets/goal_menu.dart';
+import 'package:app/features/groups/data/groups_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,9 +26,11 @@ Goal goalWith({
   GoalStatus status = GoalStatus.notStarted,
   bool verified = false,
   String ownerId = 'user-1',
+  String? assignedBy,
 }) => Goal(
   id: 'goal-1',
   ownerId: ownerId,
+  assignedBy: assignedBy,
   groupId: 'group-1',
   title: 'Run 5k',
   type: GoalType.daily,
@@ -56,6 +59,7 @@ void main() {
     WidgetTester tester, {
     required Goal goal,
     required Member viewer,
+    bool isAdmin = false,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -63,6 +67,7 @@ void main() {
         overrides: [
           goalsRepositoryProvider.overrideWithValue(goals),
           currentMemberProvider.overrideWith((ref) => viewer),
+          isGroupAdminProvider.overrideWith((ref) async => isAdmin),
           clockProvider.overrideWithValue(() => _now),
         ],
         child: MaterialApp(
@@ -114,6 +119,43 @@ void main() {
     );
 
     expect(find.byIcon(Icons.more_vert), findsOneWidget);
+  });
+
+  testWidgets('the owner of an assigned goal gets no menu', (tester) async {
+    await pumpMenu(
+      tester,
+      goal: goalWith(assignedBy: _sam.id),
+      viewer: _ada,
+    );
+
+    expect(find.byIcon(Icons.more_vert), findsNothing);
+  });
+
+  testWidgets('the admin gets a menu on a verified goal they do not own', (
+    tester,
+  ) async {
+    await pumpMenu(
+      tester,
+      goal: goalWith(status: GoalStatus.complete, verified: true),
+      viewer: _sam,
+      isAdmin: true,
+    );
+    await openMenu(tester);
+
+    expect(find.text('Edit'), findsOneWidget);
+    expect(find.text('Delete'), findsOneWidget);
+  });
+
+  testWidgets('the admin gets a menu on a goal they assigned', (tester) async {
+    await pumpMenu(
+      tester,
+      goal: goalWith(assignedBy: _sam.id),
+      viewer: _sam,
+      isAdmin: true,
+    );
+    await openMenu(tester);
+
+    expect(find.text('Edit'), findsOneWidget);
   });
 
   testWidgets('Edit opens the sheet on the stored title', (tester) async {

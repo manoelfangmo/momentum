@@ -40,10 +40,7 @@ class GoalStatusPicker extends ConsumerWidget {
         for (final status in GoalStatus.values)
           PopupMenuItem(
             value: status,
-            child: _StatusItem(
-              status: status,
-              selected: status == goal.status,
-            ),
+            child: _StatusItem(status: status, selected: status == goal.status),
           ),
       ],
       child: const _CurrentStatus(),
@@ -61,10 +58,7 @@ class _CurrentStatus extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text('Status', style: theme.textTheme.labelLarge),
-        Icon(
-          Icons.arrow_drop_down,
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
+        Icon(Icons.arrow_drop_down, color: theme.colorScheme.onSurfaceVariant),
       ],
     );
   }

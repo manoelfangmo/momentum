@@ -13,10 +13,12 @@ part 'goals_repository.g.dart';
 
 /// Reads `public.goals` and owns the RPCs that write it.
 ///
-/// Changing status, verifying, renaming, and deleting all go through
-/// functions because clients have no `UPDATE` or `DELETE` on `goals`. Each
-/// acts as the caller, so none takes an actor id. All four also write a
-/// `goal_events` row in the same transaction.
+/// Changing status, verifying, un-verifying, renaming, and deleting all go
+/// through functions because clients have no `UPDATE` or `DELETE` on
+/// `goals`. Each acts as the caller, so none takes an actor id, and each
+/// writes a `goal_events` row in the same transaction. Inserting is the
+/// exception: a member writes their own goal directly, and only the admin's
+/// `assign_goal` makes one for someone else.
 class GoalsRepository {
   GoalsRepository(this._supabase);
 
@@ -39,6 +41,32 @@ class GoalsRepository {
           .eq(GoalsTable.type, period.type.toDb())
           .gte(GoalsTable.deadline, period.start.toUtc().toIso8601String())
           .lt(GoalsTable.deadline, period.end.toUtc().toIso8601String())
+          .order(GoalsTable.createdAt, ascending: true);
+      return rows.map(Goal.fromJson).toList();
+    } on PostgrestException catch (error) {
+      throw _mapped(error);
+    }
+  }
+
+  /// Every member's goals of one type, for one period.
+  ///
+  /// One query rather than one per member: the admin tab shows the whole
+  /// group at once. Ordered by owner first so the caller can group the rows
+  /// under a member without sorting them again, then by `created_at` so each
+  /// member's goals read in the order they appeared.
+  Future<List<Goal>> fetchGroupGoals({
+    required String groupId,
+    required Period period,
+  }) async {
+    try {
+      final rows = await _supabase
+          .from(GoalsTable.name)
+          .select()
+          .eq(GoalsTable.groupId, groupId)
+          .eq(GoalsTable.type, period.type.toDb())
+          .gte(GoalsTable.deadline, period.start.toUtc().toIso8601String())
+          .lt(GoalsTable.deadline, period.end.toUtc().toIso8601String())
+          .order(GoalsTable.ownerId, ascending: true)
           .order(GoalsTable.createdAt, ascending: true);
       return rows.map(Goal.fromJson).toList();
     } on PostgrestException catch (error) {
@@ -85,6 +113,16 @@ class GoalsRepository {
     }
   }
 
+  /// Gives one member of the admin's group a goal of their own.
+  ///
+  /// Admin only, and one member per call. The command carries the arguments
+  /// rather than a row: the function picks the group and writes itself into
+  /// `assigned_by`, except when the admin is the owner — that is an ordinary
+  /// goal they set for themselves.
+  Future<Goal> assignGoal(AssignGoalCommand command) {
+    return _goal(() => _supabase.rpc(Rpc.assignGoal, params: command.toJson()));
+  }
+
   /// Sets the caller's own unverified goal to [status].
   Future<Goal> setStatus(String goalId, GoalStatus status) {
     return _goal(
@@ -102,8 +140,18 @@ class GoalsRepository {
     );
   }
 
-  /// Renames the caller's own unverified goal. Nothing else about the goal
-  /// can move: the RPC takes no type, deadline, status, or verified.
+  /// Takes a verification back, on a goal the admin does not own.
+  ///
+  /// The goal stays complete and becomes unlocked: its status can move again
+  /// and someone can verify it again.
+  Future<Goal> unverify(String goalId) {
+    return _goal(
+      () => _supabase.rpc(Rpc.unverifyGoal, params: {Rpc.pGoalId: goalId}),
+    );
+  }
+
+  /// Renames a goal. Nothing else about it can move: the RPC takes no type,
+  /// deadline, status, or verified.
   Future<Goal> updateTitle(String goalId, String title) {
     return _goal(
       () => _supabase.rpc(
@@ -113,8 +161,8 @@ class GoalsRepository {
     );
   }
 
-  /// Removes the caller's own unverified goal. Its `goal_events` stay: each
-  /// one carries a copy of the goal, so the log survives the delete.
+  /// Removes a goal. Its `goal_events` stay: each one carries a copy of the
+  /// goal, so the log survives the delete.
   Future<void> deleteGoal(String goalId) async {
     try {
       await _supabase.rpc(Rpc.deleteGoal, params: {Rpc.pGoalId: goalId});
@@ -145,17 +193,37 @@ AppException _mapped(PostgrestException error) {
       return const ValidationException(
         'That goal is no longer there. Refresh and try again.',
       );
-    case 'only_owner_can_change_status':
+    case 'not_allowed_to_change_status':
       return const PermissionException(
-        'Only the member who set a goal can change its status.',
+        'Only the member who set a goal, or the group admin, can change its '
+        'status.',
       );
-    case 'only_owner_can_edit':
+    case 'not_allowed_to_edit':
       return const PermissionException(
-        'Only the member who set a goal can edit it.',
+        'Only the member who set a goal, or the group admin, can edit it.',
       );
-    case 'only_owner_can_delete':
+    case 'not_allowed_to_delete':
       return const PermissionException(
-        'Only the member who set a goal can delete it.',
+        'Only the member who set a goal, or the group admin, can delete it.',
+      );
+    case 'assigned_goal_admin_only':
+      return const PermissionException(
+        'The group admin set this goal for you, so only they can change or '
+        'remove it.',
+      );
+    case 'admin_only':
+      return const PermissionException('Only the group admin can do that.');
+    case 'cannot_unverify_own_goal':
+      return const PermissionException(
+        'You cannot take back the verification of your own goal.',
+      );
+    case 'goal_not_verified':
+      return const ValidationException(
+        'That goal is not verified. Refresh to see it.',
+      );
+    case 'member_not_in_group':
+      return const ValidationException(
+        'That member is not in your group. Refresh and try again.',
       );
     case 'goal_verified_locked':
       return const ValidationException(
@@ -187,19 +255,28 @@ AppException _mapped(PostgrestException error) {
 /// What failure this is.
 ///
 /// The RPCs raise application-defined SQLSTATEs (class M0, listed at the top
-/// of the status-rework migration) and repeat the token in the message, so
-/// the message is a usable fallback when there is no code at all.
+/// of the migration that adds each one) and repeat the token in the message,
+/// so the message is a usable fallback when there is no code at all.
+///
+/// M0010, M0014, and M0015 kept their SQLSTATE through the admin migration
+/// under a wider name: the check is in the same place, but it now lets the
+/// admin through as well as the owner.
 String _tokenFor(PostgrestException error) => switch (error.code) {
   null => error.message,
   'M0003' => 'goal_not_found',
   'M0005' => 'cannot_verify_own_goal',
-  'M0010' => 'only_owner_can_change_status',
+  'M0010' => 'not_allowed_to_change_status',
   'M0011' => 'goal_verified_locked',
   'M0012' => 'goal_not_complete',
   'M0013' => 'goal_already_verified',
-  'M0014' => 'only_owner_can_edit',
-  'M0015' => 'only_owner_can_delete',
+  'M0014' => 'not_allowed_to_edit',
+  'M0015' => 'not_allowed_to_delete',
   'M0016' => 'invalid_title',
+  'M0017' => 'assigned_goal_admin_only',
+  'M0018' => 'admin_only',
+  'M0019' => 'cannot_unverify_own_goal',
+  'M0020' => 'goal_not_verified',
+  'M0021' => 'member_not_in_group',
   final code => code,
 };
 
@@ -216,6 +293,19 @@ Future<List<Goal>> goalsForPeriod(Ref ref, String memberId, Period period) =>
     ref
         .watch(goalsRepositoryProvider)
         .fetchGoals(ownerId: memberId, period: period);
+
+/// Every member's goals in [groupId] for one period.
+///
+/// What the admin tab watches: one cache for the whole group rather than one
+/// per member, because it shows all of them together.
+@riverpod
+Future<List<Goal>> groupGoalsForPeriod(
+  Ref ref,
+  String groupId,
+  Period period,
+) => ref
+    .watch(goalsRepositoryProvider)
+    .fetchGroupGoals(groupId: groupId, period: period);
 
 /// One member's goals of [type] whose deadline is before [before].
 ///

@@ -149,6 +149,105 @@ final class GoalsForPeriodFamily extends $Family
   String toString() => r'goalsForPeriodProvider';
 }
 
+/// Every member's goals in [groupId] for one period.
+///
+/// What the admin tab watches: one cache for the whole group rather than one
+/// per member, because it shows all of them together.
+
+@ProviderFor(groupGoalsForPeriod)
+final groupGoalsForPeriodProvider = GroupGoalsForPeriodFamily._();
+
+/// Every member's goals in [groupId] for one period.
+///
+/// What the admin tab watches: one cache for the whole group rather than one
+/// per member, because it shows all of them together.
+
+final class GroupGoalsForPeriodProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Goal>>,
+          List<Goal>,
+          FutureOr<List<Goal>>
+        >
+    with $FutureModifier<List<Goal>>, $FutureProvider<List<Goal>> {
+  /// Every member's goals in [groupId] for one period.
+  ///
+  /// What the admin tab watches: one cache for the whole group rather than one
+  /// per member, because it shows all of them together.
+  GroupGoalsForPeriodProvider._({
+    required GroupGoalsForPeriodFamily super.from,
+    required (String, Period) super.argument,
+  }) : super(
+         retry: null,
+         name: r'groupGoalsForPeriodProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$groupGoalsForPeriodHash();
+
+  @override
+  String toString() {
+    return r'groupGoalsForPeriodProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<List<Goal>> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<Goal>> create(Ref ref) {
+    final argument = this.argument as (String, Period);
+    return groupGoalsForPeriod(ref, argument.$1, argument.$2);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is GroupGoalsForPeriodProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$groupGoalsForPeriodHash() =>
+    r'1d77c7e9566105a877346034c3aba80af0e21bd4';
+
+/// Every member's goals in [groupId] for one period.
+///
+/// What the admin tab watches: one cache for the whole group rather than one
+/// per member, because it shows all of them together.
+
+final class GroupGoalsForPeriodFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<List<Goal>>, (String, Period)> {
+  GroupGoalsForPeriodFamily._()
+    : super(
+        retry: null,
+        name: r'groupGoalsForPeriodProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Every member's goals in [groupId] for one period.
+  ///
+  /// What the admin tab watches: one cache for the whole group rather than one
+  /// per member, because it shows all of them together.
+
+  GroupGoalsForPeriodProvider call(String groupId, Period period) =>
+      GroupGoalsForPeriodProvider._(argument: (groupId, period), from: this);
+
+  @override
+  String toString() => r'groupGoalsForPeriodProvider';
+}
+
 /// One member's goals of [type] whose deadline is before [before].
 ///
 /// History uses this for every period that has already ended: [before] is the

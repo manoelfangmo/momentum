@@ -100,4 +100,30 @@ void main() {
       ]);
     });
   });
+
+  group('isGroupAdmin', () {
+    Future<bool> isAdminFor(Member? signedIn) async {
+      when(repository.fetchGroup('group-1')).thenAnswer((_) async => _group);
+      final container = containerFor(signedIn);
+      container.listen(isGroupAdminProvider, (_, _) {}, onError: (_, _) {});
+      return container.read(isGroupAdminProvider.future);
+    }
+
+    test('is true for the member who created the group', () async {
+      expect(await isAdminFor(_ada), isTrue);
+    });
+
+    test('is false for every other member of that group', () async {
+      expect(await isAdminFor(_grace), isFalse);
+    });
+
+    test('is false without asking for a group when there is none', () async {
+      expect(await isAdminFor(_unjoined), isFalse);
+      verifyNever(repository.fetchGroup(any));
+    });
+
+    test('is false when nobody is signed in', () async {
+      expect(await isAdminFor(null), isFalse);
+    });
+  });
 }

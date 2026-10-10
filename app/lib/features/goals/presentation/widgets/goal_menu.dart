@@ -6,11 +6,13 @@ import 'package:app/features/goals/presentation/widgets/edit_goal_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Rename and delete for the owner of an unverified goal.
+/// Rename and delete, for whoever may do them.
 ///
-/// Whether to show it at all comes from [canManageGoalProvider], so this
-/// widget never compares member ids. Renaming opens a sheet; deleting sits
-/// behind a confirm because it takes the goal and its history with it.
+/// Which of the two to offer comes from [goalPermissionsProvider], so this
+/// widget never compares member ids: the owner of an unverified goal they
+/// set themselves, and the admin on anything in the group. Renaming opens a
+/// sheet; deleting sits behind a confirm because it takes the goal and its
+/// history with it.
 class GoalMenu extends ConsumerWidget {
   const GoalMenu({super.key, required this.goal});
 
@@ -18,7 +20,8 @@ class GoalMenu extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!ref.watch(canManageGoalProvider(goal))) {
+    final permissions = ref.watch(goalPermissionsProvider(goal));
+    if (!permissions.canEdit && !permissions.canDelete) {
       return const SizedBox.shrink();
     }
 
@@ -34,11 +37,13 @@ class GoalMenu extends ConsumerWidget {
       enabled: !isBusy,
       onSelected: (action) => _run(context, ref, action),
       itemBuilder: (context) => [
-        const PopupMenuItem(value: _GoalMenuAction.edit, child: Text('Edit')),
-        PopupMenuItem(
-          value: _GoalMenuAction.delete,
-          child: Text('Delete', style: TextStyle(color: colors.error)),
-        ),
+        if (permissions.canEdit)
+          const PopupMenuItem(value: _GoalMenuAction.edit, child: Text('Edit')),
+        if (permissions.canDelete)
+          PopupMenuItem(
+            value: _GoalMenuAction.delete,
+            child: Text('Delete', style: TextStyle(color: colors.error)),
+          ),
       ],
     );
   }

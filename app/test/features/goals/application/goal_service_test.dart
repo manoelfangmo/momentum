@@ -6,8 +6,9 @@ import 'package:app/features/goals/application/goal_service.dart';
 import 'package:app/features/goals/data/goals_repository.dart';
 import 'package:app/features/goals/data/models.dart';
 import 'package:app/features/goals/domain/goal.dart';
-import 'package:app/features/goals/domain/goal_action_availability.dart';
+import 'package:app/features/goals/domain/goal_permissions.dart';
 import 'package:app/features/goals/domain/goal_status.dart';
+import 'package:app/features/groups/data/groups_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
@@ -44,13 +45,16 @@ void main() {
     repository = MockGoalsRepository();
     when(repository.createGoal(any))
         .thenAnswer((_) async => goalOwnedBy(_ada.id));
+    when(repository.assignGoal(any))
+        .thenAnswer((_) async => goalOwnedBy(_grace.id));
   });
 
-  ProviderContainer containerFor(Member? signedIn) {
+  ProviderContainer containerFor(Member? signedIn, {bool isAdmin = false}) {
     final container = ProviderContainer(
       overrides: [
         goalsRepositoryProvider.overrideWithValue(repository),
         currentMemberProvider.overrideWith((ref) async => signedIn),
+        isGroupAdminProvider.overrideWith((ref) async => isAdmin),
         clockProvider.overrideWithValue(() => _frozen),
       ],
     );
@@ -63,6 +67,10 @@ void main() {
   CreateGoalCommand sentCommand() =>
       verify(repository.createGoal(captureAny)).captured.single
           as CreateGoalCommand;
+
+  AssignGoalCommand sentAssignCommand() =>
+      verify(repository.assignGoal(captureAny)).captured.single
+          as AssignGoalCommand;
 
   group('createGoal', () {
     test('owns the goal to the signed-in member and their group', () async {
@@ -136,52 +144,169 @@ void main() {
     });
   });
 
-  group('goalActionAvailability', () {
-    Future<GoalActionAvailability> availability(
+  group('assignGoal', () {
+    test('owns the goal to the member the admin picked', () async {
+      await containerFor(_ada, isAdmin: true)
+          .read(goalServiceProvider)
+          .assignGoal(
+            ownerId: _grace.id,
+            title: 'Run 5k',
+            type: GoalType.daily,
+          );
+
+      final command = sentAssignCommand();
+      expect(command.ownerId, _grace.id);
+      expect(command.title, 'Run 5k');
+    });
+
+    test(
+      'deadlines an assigned goal at the end of the current period',
+      () async {
+        final service = containerFor(
+          _ada,
+          isAdmin: true,
+        ).read(goalServiceProvider);
+
+        for (final type in GoalType.values) {
+          await service.assignGoal(
+            ownerId: _grace.id,
+            title: 'Run 5k',
+            type: type,
+          );
+
+          final command = sentAssignCommand();
+          expect(command.type, type);
+          expect(command.deadline, Period.containing(_frozen, type).deadline);
+          clearInteractions(repository);
+        }
+      },
+    );
+
+    test(
+      'takes the deadline from the clock, not from the wall clock',
+      () async {
+        await containerFor(_ada, isAdmin: true)
+            .read(goalServiceProvider)
+            .assignGoal(
+              ownerId: _grace.id,
+              title: 'Run 5k',
+              type: GoalType.weekly,
+            );
+
+        // The week of Monday the 5th, which only holds if the clock is frozen.
+        expect(
+          sentAssignCommand().deadline,
+          DateTime(2026, 10, 11, 23, 59, 59, 999),
+        );
+      },
+    );
+
+    test('returns the stored goal the repository read back', () async {
+      final stored = goalOwnedBy(_grace.id);
+      when(repository.assignGoal(any)).thenAnswer((_) async => stored);
+
+      final goal = await containerFor(_ada, isAdmin: true)
+          .read(goalServiceProvider)
+          .assignGoal(
+            ownerId: _grace.id,
+            title: 'Run 5k',
+            type: GoalType.daily,
+          );
+
+      expect(goal, stored);
+    });
+
+    test('leaves the admin check to the RPC', () async {
+      await containerFor(_ada)
+          .read(goalServiceProvider)
+          .assignGoal(
+            ownerId: _grace.id,
+            title: 'Run 5k',
+            type: GoalType.daily,
+          );
+
+      verify(repository.assignGoal(any)).called(1);
+    });
+  });
+
+  group('goalPermissions', () {
+    /// The provider reads both the member and the admin flag synchronously,
+    /// so both have to be resolved before the first read.
+    Future<GoalPermissions> permissions(
       Member? signedIn,
-      Goal goal,
-    ) async {
-      final container = containerFor(signedIn);
+      Goal goal, {
+      bool isAdmin = false,
+    }) async {
+      final container = containerFor(signedIn, isAdmin: isAdmin);
       container.listen(currentMemberProvider, (_, _) {}, onError: (_, _) {});
-      // The provider reads the member synchronously, so it has to be resolved
-      // before the first read.
+      container.listen(isGroupAdminProvider, (_, _) {}, onError: (_, _) {});
       await container.read(currentMemberProvider.future);
-      return container.read(goalActionAvailabilityProvider(goal));
+      await container.read(isGroupAdminProvider.future);
+      return container.read(goalPermissionsProvider(goal));
     }
 
-    test('offers the owner a way to change status', () async {
-      expect(
-        await availability(_ada, goalOwnedBy(_ada.id)),
-        const CanChangeStatus(),
-      );
+    test('lets the owner move and manage their own goal', () async {
+      final permitted = await permissions(_ada, goalOwnedBy(_ada.id));
+
+      expect(permitted.canChangeStatus, isTrue);
+      expect(permitted.canEdit, isTrue);
+      expect(permitted.canVerify, isFalse);
     });
 
-    test('offers everyone else a verify on an unverified complete goal', () async {
-      expect(
-        await availability(
+    test(
+      'offers everyone else a verify on an unverified complete goal',
+      () async {
+        final permitted = await permissions(
           _grace,
           goalOwnedBy(_ada.id, status: GoalStatus.complete),
-        ),
-        const CanVerify(),
-      );
-    });
+        );
 
-    test('offers nothing on a verified goal', () async {
+        expect(permitted.canVerify, isTrue);
+        expect(permitted.canChangeStatus, isFalse);
+      },
+    );
+
+    test('gives the admin a verified goal they do not own', () async {
       final verified = goalOwnedBy(
         _ada.id,
         status: GoalStatus.complete,
         verified: true,
       );
 
-      expect(await availability(_grace, verified), const NoAction());
+      expect(
+        await permissions(_grace, verified, isAdmin: true),
+        const GoalPermissions(
+          canChangeStatus: false,
+          canVerify: false,
+          canUnverify: true,
+          canEdit: true,
+          canDelete: true,
+        ),
+      );
     });
 
     test('offers nothing while there is no member to compare against', () {
       final container = containerFor(null);
 
       expect(
-        container.read(goalActionAvailabilityProvider(goalOwnedBy(_ada.id))),
-        const NoAction(),
+        container.read(goalPermissionsProvider(goalOwnedBy(_ada.id))),
+        GoalPermissions.none,
+      );
+    });
+
+    test('treats an admin flag that has not loaded as not the admin', () async {
+      final container = containerFor(_grace, isAdmin: true);
+      container.listen(currentMemberProvider, (_, _) {}, onError: (_, _) {});
+      await container.read(currentMemberProvider.future);
+      final verified = goalOwnedBy(
+        _ada.id,
+        status: GoalStatus.complete,
+        verified: true,
+      );
+
+      expect(
+        container.read(goalPermissionsProvider(verified)).canUnverify,
+        isFalse,
       );
     });
 
@@ -193,49 +318,10 @@ void main() {
       final theirs = goalOwnedBy(_ada.id, status: GoalStatus.complete);
 
       expect(
-        container.read(goalActionAvailabilityProvider(mine)),
-        const CanChangeStatus(),
+        container.read(goalPermissionsProvider(mine)).canChangeStatus,
+        isTrue,
       );
-      expect(
-        container.read(goalActionAvailabilityProvider(theirs)),
-        const CanVerify(),
-      );
-    });
-  });
-
-  group('canManageGoal', () {
-    Future<bool> canManageFor(Member? signedIn, Goal goal) async {
-      final container = containerFor(signedIn);
-      container.listen(currentMemberProvider, (_, _) {}, onError: (_, _) {});
-      await container.read(currentMemberProvider.future);
-      return container.read(canManageGoalProvider(goal));
-    }
-
-    test('lets the owner manage their unverified goal', () async {
-      expect(await canManageFor(_ada, goalOwnedBy(_ada.id)), isTrue);
-    });
-
-    test('does not let anyone else manage it', () async {
-      expect(await canManageFor(_grace, goalOwnedBy(_ada.id)), isFalse);
-    });
-
-    test('locks the goal for the owner once it is verified', () async {
-      final verified = goalOwnedBy(
-        _ada.id,
-        status: GoalStatus.complete,
-        verified: true,
-      );
-
-      expect(await canManageFor(_ada, verified), isFalse);
-    });
-
-    test('offers nothing while there is no member to compare against', () {
-      final container = containerFor(null);
-
-      expect(
-        container.read(canManageGoalProvider(goalOwnedBy(_ada.id))),
-        isFalse,
-      );
+      expect(container.read(goalPermissionsProvider(theirs)).canVerify, isTrue);
     });
   });
 }

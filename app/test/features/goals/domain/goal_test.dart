@@ -153,6 +153,32 @@ void main() {
     });
   });
 
+  group('isAssigned', () {
+    final goal = goalWith(deadline: deadline, createdAt: createdAt);
+
+    test('follows assignedBy', () {
+      expect(goal.isAssigned, isFalse);
+      expect(goal.copyWith(assignedBy: 'user-2').isAssigned, isTrue);
+    });
+
+    test('a row without the column is an own goal', () {
+      expect(
+        Goal.fromJson(row(deadline: deadline, createdAt: createdAt)).assignedBy,
+        isNull,
+      );
+    });
+
+    test('reads the admin out of the row that names them', () {
+      final assigned = Goal.fromJson({
+        ...row(deadline: deadline, createdAt: createdAt),
+        'assigned_by': 'user-2',
+      });
+
+      expect(assigned.assignedBy, 'user-2');
+      expect(assigned.isAssigned, isTrue);
+    });
+  });
+
   group('isLocked', () {
     test('follows verified', () {
       expect(
@@ -185,9 +211,7 @@ void main() {
 
     test('an unverified complete goal is overdue after the deadline', () {
       expect(
-        goal
-            .copyWith(status: GoalStatus.complete)
-            .isOverdue(tomorrow),
+        goal.copyWith(status: GoalStatus.complete).isOverdue(tomorrow),
         isTrue,
       );
     });

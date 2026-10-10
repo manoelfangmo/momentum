@@ -9,6 +9,7 @@ part of 'goal.dart';
 _Goal _$GoalFromJson(Map<String, dynamic> json) => _Goal(
   id: json['id'] as String,
   ownerId: json['owner_id'] as String,
+  assignedBy: json['assigned_by'] as String?,
   groupId: json['group_id'] as String,
   title: json['title'] as String,
   type: $enumDecode(_$GoalTypeEnumMap, json['type']),
@@ -23,6 +24,7 @@ _Goal _$GoalFromJson(Map<String, dynamic> json) => _Goal(
 Map<String, dynamic> _$GoalToJson(_Goal instance) => <String, dynamic>{
   'id': instance.id,
   'owner_id': instance.ownerId,
+  'assigned_by': instance.assignedBy,
   'group_id': instance.groupId,
   'title': instance.title,
   'type': _$GoalTypeEnumMap[instance.type]!,

@@ -1,6 +1,8 @@
 import 'package:app/core/database/rpc.dart';
+import 'package:app/core/domain/domain.dart';
 import 'package:app/core/utils/app_exception.dart';
 import 'package:app/features/goals/data/goals_repository.dart';
+import 'package:app/features/goals/data/models.dart';
 import 'package:app/features/goals/domain/goal_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
@@ -33,11 +35,11 @@ void main() {
   }
 
   group('setStatus', () {
-    test('a non-owner is a permission failure', () async {
+    test('neither the owner nor the admin is a permission failure', () async {
       raise(
         Rpc.setGoalStatus,
         code: 'M0010',
-        message: 'only_owner_can_change_status',
+        message: 'not_allowed_to_change_status',
       );
 
       await expectLater(
@@ -46,18 +48,14 @@ void main() {
           isA<PermissionException>().having(
             (e) => e.message,
             'message',
-            'Only the member who set a goal can change its status.',
+            startsWith('Only the member who set a goal, or the group admin,'),
           ),
         ),
       );
     });
 
     test('a verified goal is locked', () async {
-      raise(
-        Rpc.setGoalStatus,
-        code: 'M0011',
-        message: 'goal_verified_locked',
-      );
+      raise(Rpc.setGoalStatus, code: 'M0011', message: 'goal_verified_locked');
 
       await expectLater(
         repository.setStatus('goal-1', GoalStatus.complete),
@@ -98,11 +96,7 @@ void main() {
     test(
       'the owner trying to verify their own goal is a permission failure',
       () async {
-        raise(
-          Rpc.verifyGoal,
-          code: 'M0005',
-          message: 'cannot_verify_own_goal',
-        );
+        raise(Rpc.verifyGoal, code: 'M0005', message: 'cannot_verify_own_goal');
 
         await expectLater(
           repository.verify('goal-1'),
@@ -157,6 +151,133 @@ void main() {
     });
   });
 
+  group('unverify', () {
+    test('sends the goal id', () async {
+      raise(Rpc.unverifyGoal, code: 'M0003', message: 'goal_not_found');
+
+      await expectLater(
+        repository.unverify('goal-1'),
+        throwsA(isA<AppException>()),
+      );
+
+      verifyCalled(Rpc.unverifyGoal, {Rpc.pGoalId: 'goal-1'});
+    });
+
+    test('a member who is not the admin is a permission failure', () async {
+      raise(Rpc.unverifyGoal, code: 'M0018', message: 'admin_only');
+
+      await expectLater(
+        repository.unverify('goal-1'),
+        throwsA(
+          isA<PermissionException>().having(
+            (e) => e.message,
+            'message',
+            'Only the group admin can do that.',
+          ),
+        ),
+      );
+    });
+
+    test("the admin's own goal is a permission failure", () async {
+      raise(
+        Rpc.unverifyGoal,
+        code: 'M0019',
+        message: 'cannot_unverify_own_goal',
+      );
+
+      await expectLater(
+        repository.unverify('goal-1'),
+        throwsA(
+          isA<PermissionException>().having(
+            (e) => e.message,
+            'message',
+            startsWith('You cannot take back the verification'),
+          ),
+        ),
+      );
+    });
+
+    test('a goal nobody verified says to refresh', () async {
+      raise(Rpc.unverifyGoal, code: 'M0020', message: 'goal_not_verified');
+
+      await expectLater(
+        repository.unverify('goal-1'),
+        throwsA(
+          isA<ValidationException>().having(
+            (e) => e.message,
+            'message',
+            startsWith('That goal is not verified.'),
+          ),
+        ),
+      );
+    });
+  });
+
+  group('assignGoal', () {
+    final command = AssignGoalCommand(
+      ownerId: 'user-2',
+      title: 'Run 5k',
+      type: GoalType.daily,
+      deadline: DateTime(2026, 10, 9, 23, 59, 59, 999),
+    );
+
+    test('sends the command as the function arguments', () async {
+      raise(Rpc.assignGoal, code: 'M0018', message: 'admin_only');
+
+      await expectLater(
+        repository.assignGoal(command),
+        throwsA(isA<AppException>()),
+      );
+
+      verifyCalled(Rpc.assignGoal, command.toJson());
+    });
+
+    test('a member who is not the admin is a permission failure', () async {
+      raise(Rpc.assignGoal, code: 'M0018', message: 'admin_only');
+
+      await expectLater(
+        repository.assignGoal(command),
+        throwsA(
+          isA<PermissionException>().having(
+            (e) => e.message,
+            'message',
+            'Only the group admin can do that.',
+          ),
+        ),
+      );
+    });
+
+    test('an owner outside the group says to refresh', () async {
+      raise(Rpc.assignGoal, code: 'M0021', message: 'member_not_in_group');
+
+      await expectLater(
+        repository.assignGoal(command),
+        throwsA(
+          isA<ValidationException>().having(
+            (e) => e.message,
+            'message',
+            startsWith('That member is not in your group.'),
+          ),
+        ),
+      );
+    });
+
+    test('a title the database refuses says what is allowed', () async {
+      raise(Rpc.assignGoal, code: 'M0016', message: 'invalid_title');
+
+      await expectLater(
+        repository.assignGoal(command),
+        throwsA(
+          isA<ValidationException>().having(
+            (e) => e.message,
+            'message',
+            'Give the goal a title of 140 characters or fewer.',
+          ),
+        ),
+      );
+    });
+  });
+
   group('updateTitle', () {
     test('sends the goal id and the title the sheet produced', () async {
       raise(Rpc.updateGoalTitle, code: 'M0003', message: 'goal_not_found');
@@ -172,8 +293,8 @@ void main() {
       });
     });
 
-    test('a non-owner is a permission failure', () async {
-      raise(Rpc.updateGoalTitle, code: 'M0014', message: 'only_owner_can_edit');
+    test('neither the owner nor the admin is a permission failure', () async {
+      raise(Rpc.updateGoalTitle, code: 'M0014', message: 'not_allowed_to_edit');
 
       await expectLater(
         repository.updateTitle('goal-1', 'Long run'),
@@ -181,7 +302,26 @@ void main() {
           isA<PermissionException>().having(
             (e) => e.message,
             'message',
-            'Only the member who set a goal can edit it.',
+            'Only the member who set a goal, or the group admin, can edit it.',
+          ),
+        ),
+      );
+    });
+
+    test('the owner of an assigned goal is sent to the admin', () async {
+      raise(
+        Rpc.updateGoalTitle,
+        code: 'M0017',
+        message: 'assigned_goal_admin_only',
+      );
+
+      await expectLater(
+        repository.updateTitle('goal-1', 'Long run'),
+        throwsA(
+          isA<PermissionException>().having(
+            (e) => e.message,
+            'message',
+            startsWith('The group admin set this goal for you'),
           ),
         ),
       );
@@ -243,8 +383,8 @@ void main() {
       verifyCalled(Rpc.deleteGoal, {Rpc.pGoalId: 'goal-1'});
     });
 
-    test('a non-owner is a permission failure', () async {
-      raise(Rpc.deleteGoal, code: 'M0015', message: 'only_owner_can_delete');
+    test('neither the owner nor the admin is a permission failure', () async {
+      raise(Rpc.deleteGoal, code: 'M0015', message: 'not_allowed_to_delete');
 
       await expectLater(
         repository.deleteGoal('goal-1'),
@@ -252,7 +392,7 @@ void main() {
           isA<PermissionException>().having(
             (e) => e.message,
             'message',
-            'Only the member who set a goal can delete it.',
+            startsWith('Only the member who set a goal, or the group admin,'),
           ),
         ),
       );
@@ -306,11 +446,7 @@ void main() {
     test(
       'become a DatabaseException, which is not shown to the member',
       () async {
-        raise(
-          Rpc.verifyGoal,
-          code: '08006',
-          message: 'connection failure',
-        );
+        raise(Rpc.verifyGoal, code: '08006', message: 'connection failure');
 
         await expectLater(
           repository.verify('goal-1'),

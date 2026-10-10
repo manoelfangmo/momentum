@@ -1,3 +1,4 @@
+import 'package:app/core/database/rpc.dart';
 import 'package:app/core/domain/domain.dart';
 import 'package:app/core/utils/json_converters.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -22,4 +23,25 @@ abstract class CreateGoalCommand with _$CreateGoalCommand {
     required GoalType type,
     @LocalDateTimeConverter() required DateTime deadline,
   }) = _CreateGoalCommand;
+}
+
+/// The arguments for `assign_goal`, built by `GoalService`.
+///
+/// [toJson] is the `params` map, so the keys are the function's argument
+/// names rather than column names. There is no group: the RPC takes the
+/// admin's own group, and no `assignedBy`: it writes the caller.
+///
+/// The deadline travels as UTC like every other timestamp, and is the end of
+/// the current period in the device's timezone — the server cannot work that
+/// out for itself.
+@Freezed(toJson: true)
+abstract class AssignGoalCommand with _$AssignGoalCommand {
+  const factory AssignGoalCommand({
+    @JsonKey(name: Rpc.pOwnerId) required String ownerId,
+    @JsonKey(name: Rpc.pTitle) required String title,
+    @JsonKey(name: Rpc.pType) required GoalType type,
+    @JsonKey(name: Rpc.pDeadline)
+    @LocalDateTimeConverter()
+    required DateTime deadline,
+  }) = _AssignGoalCommand;
 }

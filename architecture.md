@@ -62,13 +62,13 @@ features/goals/
 ├── domain/
 │   ├── goal.dart                     # goal record the rest of the app uses
 │   ├── goal_status.dart              # not_started / in_progress / complete
-│   ├── goal_event.dart               # status_changed / verified
-│   └── goal_action_availability.dart # canChangeStatus / canVerify / none, canManage
+│   ├── goal_event.dart               # created / assigned / status_changed / …
+│   └── goal_permissions.dart         # what one viewer may do to one goal
 ├── data/
-│   ├── goals_repository.dart         # Supabase for goal rows and status RPCs
+│   ├── goals_repository.dart         # Supabase for goal rows and the goal RPCs
 │   └── models.dart                   # command objects sent to the database
 ├── application/
-│   └── goal_service.dart             # create goal; check permission before an action
+│   └── goal_service.dart             # create and assign goals; viewer permissions
 └── presentation/
     ├── goals_page.dart               # Day / Week / Month / Year tabs
     ├── controllers/                  # Riverpod notifiers and combined providers
@@ -148,6 +148,8 @@ Future<List<Goal>> fetchGoals({
 
 A simpler read skips the controller. The group page watches `groupMembersProvider(groupId)`, which calls `GroupsRepository.fetchMembers` directly. Use a controller when the widget needs data assembled from more than one provider. Use the repository provider when one query is the whole story.
 
+`groupGoalsForPeriodProvider(groupId, period)` is the admin's read: one query for every member's goals in that period, ordered by owner and then `created_at` so the page can group rows under a member without sorting them again. It is a separate provider rather than a loop over `goalsForPeriodProvider` because the admin tab shows the whole group at once.
+
 ## Writing data: two patterns
 
 ### One repository, one call
@@ -159,7 +161,7 @@ await ref.read(groupsRepositoryProvider).joinGroup(groupId);
 ref.invalidate(currentMemberProvider);
 ```
 
-Verifying a goal is the same shape. The tile calls `GoalsRepository.verify(goalId)`, then invalidates the tab, history, and stats providers that show that goal. The owner changing status calls `GoalsRepository.setStatus(goalId, status)` the same way, and so do `updateTitle(goalId, title)` and `deleteGoal(goalId)` behind the tile's menu. All four go through `GoalActionController`, a family keyed by goal id that holds one call's progress and runs the invalidations.
+Verifying a goal is the same shape. The tile calls `GoalsRepository.verify(goalId)`, then invalidates the tab, history, and stats providers that show that goal. Changing status calls `GoalsRepository.setStatus(goalId, status)` the same way, as does `unverify(goalId)`, and so do `updateTitle(goalId, title)` and `deleteGoal(goalId)` behind the tile's menu. All five go through `GoalActionController`, a family keyed by goal id that holds one call's progress and runs the invalidations.
 
 `ref.watch` subscribes and rebuilds. `ref.read` fires an action and does not subscribe. `ref.invalidate` drops the cached value so the next watch refetches.
 
@@ -179,19 +181,21 @@ Future<void> submit({required GoalType type}) async {
 
 The service reads the current member, computes `Period.containing(now, type).deadline`, builds a `CreateGoalCommand`, and calls the repository. The notifier only holds what the user typed (`CreateGoalFormState`).
 
+`GoalService.assignGoal` is the admin's version of the same shape and is there for the same reason: it computes the deadline from the clock, builds an `AssignGoalCommand`, and calls `assign_goal`. It takes the owner because the admin picks one, and the deadline is always the end of the current period — never the day the Day tab happens to be showing.
+
 Put logic in `application/` when it:
 
 - calls more than one repository, or
 - runs several repository calls that must succeed as one user action, or
 - decides something from data owned by another feature.
 
-`goalActionAvailability` is the third case. An unverified goal shows a status picker when the viewer is the owner. It shows **Verify** when the viewer is not the owner and the status is complete. Verified goals show a lock and no controls. The service reads the current member and the goal, then returns a `GoalActionAvailability`. `GoalTile` renders a control for each case. The tile does not compare user ids itself.
+`goalPermissions` is the third case. It answers what the signed-in member may do to one goal, as five independent booleans on a `GoalPermissions`: `canChangeStatus`, `canVerify`, `canUnverify`, `canEdit`, `canDelete`. Independent rather than one choice, because they combine — the admin looking at another member's complete goal may move its status, verify it, rename it, and delete it, all at once. `GoalActions` draws a control for each flag it finds set and a lock when a verified goal offers none; `GoalMenu` shows itself only when `canEdit` or `canDelete` is. Neither widget compares member ids.
 
-`canManageGoal` sits next to it and answers a separate question: may the viewer rename or delete this goal? Owner only, and only while it is unverified. It is its own provider rather than another `GoalActionAvailability` case because an owner can both change status and rename, so the two are not alternatives. `GoalMenu` shows itself only when it is true.
+The rule itself is `permissionsFor(goal, viewerId:, isAdmin:)`, a pure function in `domain/`. The provider exists only to feed it the two facts it cannot reach from a `Goal`: the signed-in member from auth, and `isGroupAdminProvider` from groups. An admin flag that has not resolved yet counts as not the admin, so the first frame never offers a control the viewer cannot use.
 
-The database enforces the same rules again inside `set_goal_status`, `verify_goal`, `update_goal_title`, and `delete_goal`. The app's check decides what to show. The RPC decides what is allowed. Verifying closes a goal to its owner: no status change, no rename, no delete, and no way back.
+The database enforces the same rules again inside `set_goal_status`, `verify_goal`, `unverify_goal`, `update_goal_title`, and `delete_goal`. The app's check decides what to show. The RPC decides what is allowed. Verifying closes a goal to its owner: no status change, no rename, no delete.
 
-The group admin — the member who created the group, `groups.created_by` — is the exception to all of that. `is_group_admin()` answers it in SQL. The admin may change the status of any unverified goal, rename or delete any goal including a verified one, un-verify a goal they do not own through `unverify_goal`, and give a goal to one member through `assign_goal`. A goal the admin assigned is the mirror of the admin's reach: `goals.assigned_by` names them, and the owner may move its status and nothing else. There is no expiry — every RPC works after the deadline.
+The group admin — the member who created the group, `groups.created_by` — is the exception to all of that, and `isGroupAdminProvider` is how the app asks. The admin may change the status of any unverified goal, rename or delete any goal including a verified one, un-verify a goal they do not own through `unverify_goal`, and give a goal to one member through `assign_goal`. Un-verifying is the only way out of the verified state: the goal stays complete, unlocks, and can be verified again. A goal the admin assigned is the mirror of the admin's reach: `goals.assigned_by` names them, `Goal.isAssigned` reads it, and the owner may move its status and nothing else. There is no expiry — every rule above holds after the deadline, in the app and in SQL.
 
 ## What each layer is allowed to do
 
@@ -200,11 +204,11 @@ The group admin — the member who created the group, `groups.created_by` — is
 | `presentation/` | Widgets, route classes, form state, validators, UI-only models | Supabase calls, multi-step workflows |
 | `application/` | Services that order repository calls or combine features | Widgets, `BuildContext` |
 | `data/` | Repositories, command objects passed into those repositories | UI state, navigation |
-| `domain/` | Entities, value objects, decisions (`GoalActionAvailability`) | Flutter, Supabase, Riverpod |
+| `domain/` | Entities, value objects, decisions (`GoalPermissions`) | Flutter, Supabase, Riverpod |
 
 Table and column names are not string literals scattered through repositories. They live on classes in `app/lib/core/database/`, for example `GoalsTable.deadline` and `MembersTable.groupId`. RPC names live there too, on `Rpc.setGoalStatus` and `Rpc.verifyGoal`.
 
-A repository or service method with more than two or three parameters takes one **command** object, defined next to the repository in `data/models.dart`. `CreateGoalCommand` is the goals example: the service builds it, `toJson()` is the insert payload.
+A repository or service method with more than two or three parameters takes one **command** object, defined next to the repository in `data/models.dart`. `CreateGoalCommand` is the goals example: the service builds it, `toJson()` is the insert payload. `AssignGoalCommand` is the same idea for an RPC, so its `toJson()` keys are the function's argument names (`Rpc.pOwnerId` and the rest) rather than column names.
 
 ## Riverpod
 
@@ -281,7 +285,7 @@ Two Riverpod behaviours trip people up in tests:
 
 ## Domain models
 
-`Goal` is a Freezed class with `fromJson`. Freezed gives you `copyWith`, equality, and (for a sealed class) exhaustive cases. `verified` is a boolean on the goal; it can only be true when `status` is complete. `GoalActionAvailability` is the sealed example: `CanChangeStatus`, `CanVerify`, and `NoAction`. The goal tile branches on those cases. `Goal.countsAsDone` is true only for complete and verified.
+`Goal` is a Freezed class with `fromJson`. Freezed gives you `copyWith`, equality, and (for a sealed class) exhaustive cases. `verified` is a boolean on the goal; it can only be true when `status` is complete, and only `unverify_goal` takes it back. `GoalPermissions` is a Freezed value object with no JSON at all — the equality is what lets a test compare a whole answer against one named constant instead of five fields. `Goal.countsAsDone` is true only for complete and verified.
 
 JSON field renaming is configured for the project (`field_rename: snake` in `build.yaml`), so `ownerId` in Dart matches `owner_id` from Postgres without a manual map at every call. Timestamps arrive as UTC. `Goal.fromJson` converts `deadline` and `createdAt` to local time, and command objects convert back to UTC in `toJson()`.
 

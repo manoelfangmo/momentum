@@ -1,18 +1,20 @@
 import 'package:app/core/utils/toasts.dart';
 import 'package:app/features/goals/application/goal_service.dart';
 import 'package:app/features/goals/domain/goal.dart';
-import 'package:app/features/goals/domain/goal_action_availability.dart';
 import 'package:app/features/goals/presentation/controllers/goal_action_controller.dart';
 import 'package:app/features/goals/presentation/widgets/goal_status_picker.dart';
 import 'package:app/features/groups/data/groups_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// The one action the viewer may take on [goal], if any.
+/// What the viewer may do to [goal] from the tile.
 ///
-/// Availability comes from [goalActionAvailabilityProvider], so this widget
-/// never compares member ids. Status changes go straight to the picker;
-/// verify sits behind a confirm because it cannot be undone.
+/// Permissions come from [goalPermissionsProvider], so this widget never
+/// compares member ids or works out who the admin is. They are not
+/// alternatives: the admin looking at another member's complete goal gets
+/// both a status picker and a Verify. Status changes go straight to the
+/// picker; verifying and un-verifying sit behind a confirm because each one
+/// moves a goal someone else owns.
 class GoalActions extends ConsumerWidget {
   const GoalActions({super.key, required this.goal});
 
@@ -20,7 +22,7 @@ class GoalActions extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final availability = ref.watch(goalActionAvailabilityProvider(goal));
+    final permissions = ref.watch(goalPermissionsProvider(goal));
     final isLoading = ref
         .watch(goalActionControllerProvider(goal.id))
         .isLoading;
@@ -28,20 +30,34 @@ class GoalActions extends ConsumerWidget {
       if (next case AsyncError(:final error)) showErrorToast(context, error);
     });
 
-    return switch (availability) {
-      CanChangeStatus() => GoalStatusPicker(goal: goal),
-      CanVerify() => _VerifyButton(
-        isLoading: isLoading,
-        onPressed: () => _confirmVerify(context, ref),
-      ),
-      NoAction() => goal.verified
-          ? Icon(
-              Icons.lock_outline,
-              size: 20,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            )
-          : const SizedBox.shrink(),
-    };
+    final controls = [
+      if (permissions.canChangeStatus) GoalStatusPicker(goal: goal),
+      if (permissions.canVerify)
+        _ActionButton(
+          label: 'Verify',
+          isLoading: isLoading,
+          onPressed: () => _confirmVerify(context, ref),
+        ),
+      if (permissions.canUnverify)
+        _ActionButton(
+          label: 'Un-verify',
+          isLoading: isLoading,
+          onPressed: () => _confirmUnverify(context, ref),
+        ),
+    ];
+
+    // A verified goal with nothing on offer reads as closed rather than as
+    // empty space, which is the one case worth drawing.
+    if (controls.isEmpty) {
+      if (!goal.verified) return const SizedBox.shrink();
+      return Icon(
+        Icons.lock_outline,
+        size: 20,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      );
+    }
+
+    return Row(mainAxisSize: MainAxisSize.min, spacing: 4, children: controls);
   }
 
   Future<void> _confirmVerify(BuildContext context, WidgetRef ref) async {
@@ -55,8 +71,22 @@ class GoalActions extends ConsumerWidget {
     await ref.read(goalActionControllerProvider(goal.id).notifier).verify(goal);
   }
 
-  /// The owner's name for the verify copy. Looked up from the group, not from
-  /// comparing ids to decide the action.
+  Future<void> _confirmUnverify(BuildContext context, WidgetRef ref) async {
+    final name = await _ownerName(ref);
+    if (!context.mounted) return;
+    final confirmed = await _confirm(
+      context,
+      "Un-verify '${goal.title}' for $name? It stays complete, and anyone "
+      'but them can verify it again.',
+    );
+    if (!context.mounted || !confirmed) return;
+    await ref
+        .read(goalActionControllerProvider(goal.id).notifier)
+        .unverify(goal);
+  }
+
+  /// The owner's name for the confirm copy. Looked up from the group, not
+  /// from comparing ids to decide the action.
   Future<String> _ownerName(WidgetRef ref) async {
     try {
       final members = await ref.read(groupMembersProvider(goal.groupId).future);
@@ -91,9 +121,14 @@ Future<bool> _confirm(BuildContext context, String message) async {
 }
 
 /// Compact enough to sit in a [ListTile] trailing slot.
-class _VerifyButton extends StatelessWidget {
-  const _VerifyButton({required this.isLoading, required this.onPressed});
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.label,
+    required this.isLoading,
+    required this.onPressed,
+  });
 
+  final String label;
   final bool isLoading;
   final VoidCallback onPressed;
 
@@ -110,7 +145,7 @@ class _VerifyButton extends StatelessWidget {
               dimension: 16,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : const Text('Verify'),
+          : Text(label),
     );
   }
 }

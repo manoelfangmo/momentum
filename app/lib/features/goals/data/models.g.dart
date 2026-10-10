@@ -21,3 +21,11 @@ const _$GoalTypeEnumMap = {
   GoalType.monthly: 'monthly',
   GoalType.yearly: 'yearly',
 };
+
+Map<String, dynamic> _$AssignGoalCommandToJson(_AssignGoalCommand instance) =>
+    <String, dynamic>{
+      'p_owner_id': instance.ownerId,
+      'p_title': instance.title,
+      'p_type': _$GoalTypeEnumMap[instance.type]!,
+      'p_deadline': const LocalDateTimeConverter().toJson(instance.deadline),
+    };

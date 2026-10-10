@@ -32,15 +32,21 @@ class GoalActionController extends _$GoalActionController {
     return _run(() => ref.read(goalsRepositoryProvider).verify(goal.id));
   }
 
-  /// Renames the owner's own unverified goal. [title] is stored as given;
-  /// the sheet trims it, and so does the RPC.
+  /// Takes back the verification of a goal the admin does not own, leaving
+  /// it complete and unlocked.
+  Future<void> unverify(Goal goal) {
+    return _run(() => ref.read(goalsRepositoryProvider).unverify(goal.id));
+  }
+
+  /// Renames a goal. [title] is stored as given; the sheet trims it, and so
+  /// does the RPC.
   Future<void> updateTitle(Goal goal, String title) {
     return _run(
       () => ref.read(goalsRepositoryProvider).updateTitle(goal.id, title),
     );
   }
 
-  /// Removes the owner's own unverified goal, events and all.
+  /// Removes a goal. Its events stay behind; each carries a copy of it.
   Future<void> delete(Goal goal) {
     return _run(() => ref.read(goalsRepositoryProvider).deleteGoal(goal.id));
   }
@@ -59,9 +65,10 @@ class GoalActionController extends _$GoalActionController {
     state = const AsyncData(null);
 
     // The whole family: the goal is in the tab it was tapped from, but the
-    // other tabs and History read the same member's lists, and a stale row
-    // somewhere else is not worth naming each key to avoid.
+    // other tabs, the admin tab, and History read lists it is also in, and a
+    // stale row somewhere else is not worth naming each key to avoid.
     ref.invalidate(goalsForPeriodProvider);
+    ref.invalidate(groupGoalsForPeriodProvider);
     ref.invalidate(historyGoalsProvider);
   }
 }

@@ -46,9 +46,7 @@ class _CreateGoalSheetState extends ConsumerState<CreateGoalSheet> {
     setState(() => _isSaving = true);
 
     try {
-      await ref
-          .read(createGoalFormProvider.notifier)
-          .submit(type: widget.type);
+      await ref.read(createGoalFormProvider.notifier).submit(type: widget.type);
       if (mounted) Navigator.of(context).pop();
     } catch (error) {
       // The draft is still in the notifier, so the sheet stays open on the

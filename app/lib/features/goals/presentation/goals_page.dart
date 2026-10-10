@@ -28,9 +28,7 @@ class GoalsPage extends ConsumerWidget {
           title: const Text('Goals'),
           actions: [if (groupId != null) MemberPicker(groupId: groupId)],
           bottom: TabBar(
-            tabs: [
-              for (final type in GoalType.values) Tab(text: type.label),
-            ],
+            tabs: [for (final type in GoalType.values) Tab(text: type.label)],
           ),
         ),
         body: TabBarView(

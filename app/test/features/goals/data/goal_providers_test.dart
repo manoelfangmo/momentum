@@ -91,6 +91,47 @@ void main() {
     });
   });
 
+  group('groupGoalsForPeriod', () {
+    test('asks the repository for that group and period', () async {
+      final run = goalCalled('Run 5k', _today);
+      when(repository.fetchGroupGoals(groupId: 'group-1', period: _today))
+          .thenAnswer((_) async => [run]);
+      final goals = groupGoalsForPeriodProvider('group-1', _today);
+      final c = container();
+      c.listen(goals, (_, _) {}, onError: (_, _) {});
+
+      expect(await c.read(goals.future), [run]);
+      verify(repository.fetchGroupGoals(groupId: 'group-1', period: _today))
+          .called(1);
+    });
+
+    test('keeps one cache per group and period', () async {
+      when(
+        repository.fetchGroupGoals(
+          groupId: anyNamed('groupId'),
+          period: anyNamed('period'),
+        ),
+      ).thenAnswer((_) async => []);
+      final c = container();
+      final keys = [
+        groupGoalsForPeriodProvider('group-1', _today),
+        groupGoalsForPeriodProvider('group-1', _thisWeek),
+        groupGoalsForPeriodProvider('group-2', _today),
+      ];
+      for (final key in keys) {
+        c.listen(key, (_, _) {}, onError: (_, _) {});
+        await c.read(key.future);
+      }
+
+      verify(repository.fetchGroupGoals(groupId: 'group-1', period: _today))
+          .called(1);
+      verify(repository.fetchGroupGoals(groupId: 'group-1', period: _thisWeek))
+          .called(1);
+      verify(repository.fetchGroupGoals(groupId: 'group-2', period: _today))
+          .called(1);
+    });
+  });
+
   group('historyGoals', () {
     final before = _today.start;
 

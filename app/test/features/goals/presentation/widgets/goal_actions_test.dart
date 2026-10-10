@@ -50,6 +50,7 @@ void main() {
     groups = MockGroupsRepository();
     when(groups.fetchMembers('group-1')).thenAnswer((_) async => [_ada, _sam]);
     when(goals.verify(any)).thenAnswer((_) async => goalWith());
+    when(goals.unverify(any)).thenAnswer((_) async => goalWith());
     when(goals.setStatus(any, any)).thenAnswer((_) async => goalWith());
     when(
       goals.fetchGoals(
@@ -63,6 +64,7 @@ void main() {
     WidgetTester tester, {
     required Goal goal,
     required Member viewer,
+    bool isAdmin = false,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -71,6 +73,7 @@ void main() {
           goalsRepositoryProvider.overrideWithValue(goals),
           groupsRepositoryProvider.overrideWithValue(groups),
           currentMemberProvider.overrideWith((ref) => viewer),
+          isGroupAdminProvider.overrideWith((ref) async => isAdmin),
         ],
         child: MaterialApp(
           home: Scaffold(body: GoalActions(goal: goal)),
@@ -223,6 +226,79 @@ void main() {
 
     inFlight.complete(goalWith(status: GoalStatus.complete));
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('the admin can move a goal they do not own', (tester) async {
+    await pumpActions(tester, goal: goalWith(), viewer: _sam, isAdmin: true);
+
+    expect(find.byType(GoalStatusPicker), findsOneWidget);
+  });
+
+  testWidgets('the admin gets both the picker and Verify on a complete goal', (
+    tester,
+  ) async {
+    await pumpActions(
+      tester,
+      goal: goalWith(status: GoalStatus.complete),
+      viewer: _sam,
+      isAdmin: true,
+    );
+
+    expect(find.byType(GoalStatusPicker), findsOneWidget);
+    expect(find.text('Verify'), findsOneWidget);
+  });
+
+  testWidgets('the admin gets Un-verify on a verified goal they do not own', (
+    tester,
+  ) async {
+    await pumpActions(
+      tester,
+      goal: goalWith(status: GoalStatus.complete, verified: true),
+      viewer: _sam,
+      isAdmin: true,
+    );
+
+    expect(find.text('Un-verify'), findsOneWidget);
+    expect(find.byIcon(Icons.lock_outline), findsNothing);
+  });
+
+  testWidgets("the admin's own verified goal is locked like anyone else's", (
+    tester,
+  ) async {
+    await pumpActions(
+      tester,
+      goal: goalWith(
+        status: GoalStatus.complete,
+        verified: true,
+        ownerId: _sam.id,
+      ),
+      viewer: _sam,
+      isAdmin: true,
+    );
+
+    expect(find.text('Un-verify'), findsNothing);
+    expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+  });
+
+  testWidgets('Un-verify asks to confirm before it calls the repository', (
+    tester,
+  ) async {
+    await pumpActions(
+      tester,
+      goal: goalWith(status: GoalStatus.complete, verified: true),
+      viewer: _sam,
+      isAdmin: true,
+    );
+    await tester.tap(find.text('Un-verify'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining("Un-verify 'Run 5k' for Ada?"), findsOneWidget);
+    verifyNever(goals.unverify(any));
+
+    await tester.tap(find.text('Confirm'));
+    await tester.pumpAndSettle();
+
+    verify(goals.unverify('goal-1')).called(1);
   });
 
   testWidgets('a rejected RPC shows the mapped message in a toast', (

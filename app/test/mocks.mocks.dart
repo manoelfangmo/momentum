@@ -227,6 +227,19 @@ class MockGoalsRepository extends _i1.Mock implements _i10.GoalsRepository {
   ) as _i7.Future<List<_i4.Goal>>);
 
   @override
+  _i7.Future<List<_i4.Goal>> fetchGroupGoals({
+    required String? groupId,
+    required _i2.Period? period,
+  }) => (super.noSuchMethod(
+    Invocation.method(#fetchGroupGoals, [], {
+      #groupId: groupId,
+      #period: period,
+    }),
+    returnValue: _i7.Future<List<_i4.Goal>>.value(<_i4.Goal>[]),
+    returnValueForMissingStub: _i7.Future<List<_i4.Goal>>.value(<_i4.Goal>[]),
+  ) as _i7.Future<List<_i4.Goal>>);
+
+  @override
   _i7.Future<List<_i4.Goal>> fetchGoalsBefore({
     required String? ownerId,
     required _i2.GoalType? type,
@@ -254,6 +267,18 @@ class MockGoalsRepository extends _i1.Mock implements _i10.GoalsRepository {
       ) as _i7.Future<_i4.Goal>);
 
   @override
+  _i7.Future<_i4.Goal> assignGoal(_i11.AssignGoalCommand? command) =>
+      (super.noSuchMethod(
+        Invocation.method(#assignGoal, [command]),
+        returnValue: _i7.Future<_i4.Goal>.value(
+          _FakeGoal_2(this, Invocation.method(#assignGoal, [command])),
+        ),
+        returnValueForMissingStub: _i7.Future<_i4.Goal>.value(
+          _FakeGoal_2(this, Invocation.method(#assignGoal, [command])),
+        ),
+      ) as _i7.Future<_i4.Goal>);
+
+  @override
   _i7.Future<_i4.Goal> setStatus(String? goalId, _i12.GoalStatus? status) =>
       (super.noSuchMethod(
         Invocation.method(#setStatus, [goalId, status]),
@@ -273,6 +298,17 @@ class MockGoalsRepository extends _i1.Mock implements _i10.GoalsRepository {
     ),
     returnValueForMissingStub: _i7.Future<_i4.Goal>.value(
       _FakeGoal_2(this, Invocation.method(#verify, [goalId])),
+    ),
+  ) as _i7.Future<_i4.Goal>);
+
+  @override
+  _i7.Future<_i4.Goal> unverify(String? goalId) => (super.noSuchMethod(
+    Invocation.method(#unverify, [goalId]),
+    returnValue: _i7.Future<_i4.Goal>.value(
+      _FakeGoal_2(this, Invocation.method(#unverify, [goalId])),
+    ),
+    returnValueForMissingStub: _i7.Future<_i4.Goal>.value(
+      _FakeGoal_2(this, Invocation.method(#unverify, [goalId])),
     ),
   ) as _i7.Future<_i4.Goal>);
 
@@ -316,6 +352,39 @@ class MockGoalService extends _i1.Mock implements _i13.GoalService {
       _FakeGoal_2(
         this,
         Invocation.method(#createGoal, [], {#title: title, #type: type}),
+      ),
+    ),
+  ) as _i7.Future<_i4.Goal>);
+
+  @override
+  _i7.Future<_i4.Goal> assignGoal({
+    required String? ownerId,
+    required String? title,
+    required _i2.GoalType? type,
+  }) => (super.noSuchMethod(
+    Invocation.method(#assignGoal, [], {
+      #ownerId: ownerId,
+      #title: title,
+      #type: type,
+    }),
+    returnValue: _i7.Future<_i4.Goal>.value(
+      _FakeGoal_2(
+        this,
+        Invocation.method(#assignGoal, [], {
+          #ownerId: ownerId,
+          #title: title,
+          #type: type,
+        }),
+      ),
+    ),
+    returnValueForMissingStub: _i7.Future<_i4.Goal>.value(
+      _FakeGoal_2(
+        this,
+        Invocation.method(#assignGoal, [], {
+          #ownerId: ownerId,
+          #title: title,
+          #type: type,
+        }),
       ),
     ),
   ) as _i7.Future<_i4.Goal>);

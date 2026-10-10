@@ -190,3 +190,65 @@ final class GroupMembersFamily extends $Family
   @override
   String toString() => r'groupMembersProvider';
 }
+
+/// Whether the signed-in member is the admin of their group.
+///
+/// The admin is whoever created the group, so there is nothing to read but
+/// `groups.created_by`: no admin column, no admin table, one per group, no
+/// transfer. `is_group_admin()` answers the same question in SQL, which is
+/// what actually guards the admin RPCs; this decides what the app offers.
+///
+/// False rather than an error for a member with no group — they are on
+/// onboarding, where there is no admin to be.
+
+@ProviderFor(isGroupAdmin)
+final isGroupAdminProvider = IsGroupAdminProvider._();
+
+/// Whether the signed-in member is the admin of their group.
+///
+/// The admin is whoever created the group, so there is nothing to read but
+/// `groups.created_by`: no admin column, no admin table, one per group, no
+/// transfer. `is_group_admin()` answers the same question in SQL, which is
+/// what actually guards the admin RPCs; this decides what the app offers.
+///
+/// False rather than an error for a member with no group — they are on
+/// onboarding, where there is no admin to be.
+
+final class IsGroupAdminProvider
+    extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
+    with $FutureModifier<bool>, $FutureProvider<bool> {
+  /// Whether the signed-in member is the admin of their group.
+  ///
+  /// The admin is whoever created the group, so there is nothing to read but
+  /// `groups.created_by`: no admin column, no admin table, one per group, no
+  /// transfer. `is_group_admin()` answers the same question in SQL, which is
+  /// what actually guards the admin RPCs; this decides what the app offers.
+  ///
+  /// False rather than an error for a member with no group — they are on
+  /// onboarding, where there is no admin to be.
+  IsGroupAdminProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'isGroupAdminProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$isGroupAdminHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<bool> create(Ref ref) {
+    return isGroupAdmin(ref);
+  }
+}
+
+String _$isGroupAdminHash() => r'9bee1c97f8c3ee0364733512a55815498e3fc2dd';

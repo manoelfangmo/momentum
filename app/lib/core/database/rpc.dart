@@ -24,4 +24,7 @@ abstract final class Rpc {
   static const pGoalId = 'p_goal_id';
   static const pStatus = 'p_status';
   static const pTitle = 'p_title';
+  static const pOwnerId = 'p_owner_id';
+  static const pType = 'p_type';
+  static const pDeadline = 'p_deadline';
 }

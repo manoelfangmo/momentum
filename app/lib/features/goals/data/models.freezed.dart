@@ -293,4 +293,282 @@ as DateTime,
 
 }
 
+/// @nodoc
+mixin _$AssignGoalCommand {
+
+@JsonKey(name: Rpc.pOwnerId) String get ownerId;@JsonKey(name: Rpc.pTitle) String get title;@JsonKey(name: Rpc.pType) GoalType get type;@JsonKey(name: Rpc.pDeadline)@LocalDateTimeConverter() DateTime get deadline;
+/// Create a copy of AssignGoalCommand
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AssignGoalCommandCopyWith<AssignGoalCommand> get copyWith => _$AssignGoalCommandCopyWithImpl<AssignGoalCommand>(this as AssignGoalCommand, _$identity);
+
+  /// Serializes this AssignGoalCommand to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as AssignGoalCommand;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AssignGoalCommand&&(identical(other.ownerId, _this.ownerId) || other.ownerId == _this.ownerId)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.deadline, _this.deadline) || other.deadline == _this.deadline));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as AssignGoalCommand;
+  return Object.hash(runtimeType,_this.ownerId,_this.title,_this.type,_this.deadline);
+}
+
+@override
+String toString() {
+  final _this = this as AssignGoalCommand;
+  return 'AssignGoalCommand(ownerId: ${_this.ownerId}, title: ${_this.title}, type: ${_this.type}, deadline: ${_this.deadline})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AssignGoalCommandCopyWith<$Res>  {
+  factory $AssignGoalCommandCopyWith(AssignGoalCommand value, $Res Function(AssignGoalCommand) _then) = _$AssignGoalCommandCopyWithImpl;
+@useResult
+$Res call({
+@JsonKey(name: Rpc.pOwnerId) String ownerId,@JsonKey(name: Rpc.pTitle) String title,@JsonKey(name: Rpc.pType) GoalType type,@JsonKey(name: Rpc.pDeadline)@LocalDateTimeConverter() DateTime deadline
+});
+
+
+
+
+}
+/// @nodoc
+class _$AssignGoalCommandCopyWithImpl<$Res>
+    implements $AssignGoalCommandCopyWith<$Res> {
+  _$AssignGoalCommandCopyWithImpl(this._self, this._then);
+
+  final AssignGoalCommand _self;
+  final $Res Function(AssignGoalCommand) _then;
+
+/// Create a copy of AssignGoalCommand
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? ownerId = null,Object? title = null,Object? type = null,Object? deadline = null,}) {
+  return _then(AssignGoalCommand(
+ownerId: null == ownerId ? _self.ownerId : ownerId // ignore: cast_nullable_to_non_nullable
+as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as GoalType,deadline: null == deadline ? _self.deadline : deadline // ignore: cast_nullable_to_non_nullable
+as DateTime,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [AssignGoalCommand].
+extension AssignGoalCommandPatterns on AssignGoalCommand {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _AssignGoalCommand value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _AssignGoalCommand() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _AssignGoalCommand value)  $default,){
+final _that = this;
+switch (_that) {
+case _AssignGoalCommand():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _AssignGoalCommand value)?  $default,){
+final _that = this;
+switch (_that) {
+case _AssignGoalCommand() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: Rpc.pOwnerId)  String ownerId, @JsonKey(name: Rpc.pTitle)  String title, @JsonKey(name: Rpc.pType)  GoalType type, @JsonKey(name: Rpc.pDeadline)@LocalDateTimeConverter()  DateTime deadline)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _AssignGoalCommand() when $default != null:
+return $default(_that.ownerId,_that.title,_that.type,_that.deadline);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: Rpc.pOwnerId)  String ownerId, @JsonKey(name: Rpc.pTitle)  String title, @JsonKey(name: Rpc.pType)  GoalType type, @JsonKey(name: Rpc.pDeadline)@LocalDateTimeConverter()  DateTime deadline)  $default,) {final _that = this;
+switch (_that) {
+case _AssignGoalCommand():
+return $default(_that.ownerId,_that.title,_that.type,_that.deadline);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: Rpc.pOwnerId)  String ownerId, @JsonKey(name: Rpc.pTitle)  String title, @JsonKey(name: Rpc.pType)  GoalType type, @JsonKey(name: Rpc.pDeadline)@LocalDateTimeConverter()  DateTime deadline)?  $default,) {final _that = this;
+switch (_that) {
+case _AssignGoalCommand() when $default != null:
+return $default(_that.ownerId,_that.title,_that.type,_that.deadline);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable(createFactory: false)
+
+class _AssignGoalCommand implements AssignGoalCommand {
+  const _AssignGoalCommand({@JsonKey(name: Rpc.pOwnerId) required this.ownerId, @JsonKey(name: Rpc.pTitle) required this.title, @JsonKey(name: Rpc.pType) required this.type, @JsonKey(name: Rpc.pDeadline)@LocalDateTimeConverter() required this.deadline});
+  
+
+@override@JsonKey(name: Rpc.pOwnerId) final  String ownerId;
+@override@JsonKey(name: Rpc.pTitle) final  String title;
+@override@JsonKey(name: Rpc.pType) final  GoalType type;
+@override@JsonKey(name: Rpc.pDeadline)@LocalDateTimeConverter() final  DateTime deadline;
+
+/// Create a copy of AssignGoalCommand
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$AssignGoalCommandCopyWith<_AssignGoalCommand> get copyWith => __$AssignGoalCommandCopyWithImpl<_AssignGoalCommand>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$AssignGoalCommandToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AssignGoalCommand&&(identical(other.ownerId, ownerId) || other.ownerId == ownerId)&&(identical(other.title, title) || other.title == title)&&(identical(other.type, type) || other.type == type)&&(identical(other.deadline, deadline) || other.deadline == deadline));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,ownerId,title,type,deadline);
+}
+
+@override
+String toString() {
+    return 'AssignGoalCommand(ownerId: $ownerId, title: $title, type: $type, deadline: $deadline)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$AssignGoalCommandCopyWith<$Res> implements $AssignGoalCommandCopyWith<$Res> {
+  factory _$AssignGoalCommandCopyWith(_AssignGoalCommand value, $Res Function(_AssignGoalCommand) _then) = __$AssignGoalCommandCopyWithImpl;
+@override @useResult
+$Res call({
+@JsonKey(name: Rpc.pOwnerId) String ownerId,@JsonKey(name: Rpc.pTitle) String title,@JsonKey(name: Rpc.pType) GoalType type,@JsonKey(name: Rpc.pDeadline)@LocalDateTimeConverter() DateTime deadline
+});
+
+
+
+
+}
+/// @nodoc
+class __$AssignGoalCommandCopyWithImpl<$Res>
+    implements _$AssignGoalCommandCopyWith<$Res> {
+  __$AssignGoalCommandCopyWithImpl(this._self, this._then);
+
+  final _AssignGoalCommand _self;
+  final $Res Function(_AssignGoalCommand) _then;
+
+/// Create a copy of AssignGoalCommand
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? ownerId = null,Object? title = null,Object? type = null,Object? deadline = null,}) {
+  return _then(_AssignGoalCommand(
+ownerId: null == ownerId ? _self.ownerId : ownerId // ignore: cast_nullable_to_non_nullable
+as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as GoalType,deadline: null == deadline ? _self.deadline : deadline // ignore: cast_nullable_to_non_nullable
+as DateTime,
+  ));
+}
+
+
+}
+
 // dart format on
