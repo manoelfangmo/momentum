@@ -3,7 +3,7 @@ import 'package:app/core/utils/providers.dart';
 import 'package:app/features/auth/data/member_repository.dart';
 import 'package:app/features/goals/data/goals_repository.dart';
 import 'package:app/features/goals/presentation/controllers/goals_view_controller.dart';
-import 'package:app/features/goals/presentation/widgets/day_selector.dart';
+import 'package:app/core/widgets/day_selector.dart';
 import 'package:app/features/goals/presentation/widgets/goal_tab_view.dart';
 import 'package:app/features/groups/data/groups_repository.dart';
 import 'package:flutter/material.dart';
@@ -51,7 +51,9 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(home: Scaffold(body: GoalTabView(type: type))),
+        child: MaterialApp(
+          home: Scaffold(body: GoalTabView(type: type)),
+        ),
       ),
     );
     await tester.pumpAndSettle();

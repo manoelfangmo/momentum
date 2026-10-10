@@ -59,12 +59,13 @@ void main() {
     );
   });
 
-  test('resetDayToToday comes back to the clock day', () {
+  test('coming back to the clock day is another selectDay', () {
     final c = container();
     final controller = c.read(goalsViewControllerProvider.notifier);
 
     controller.selectDay(DateTime(2026, 10, 2));
-    controller.resetDayToToday();
+    // What the selector's "Today" button passes back.
+    controller.selectDay(c.read(clockProvider)());
 
     expect(
       c.read(goalsViewControllerProvider).selectedDay,

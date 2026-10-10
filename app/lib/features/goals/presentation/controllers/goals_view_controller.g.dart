@@ -66,7 +66,7 @@ final class GoalsViewControllerProvider
 }
 
 String _$goalsViewControllerHash() =>
-    r'ad0226332734c50bf72bf2cd16dc6214bcfdba4f';
+    r'd74fcd6bb30d48a04ff5a27191701216c165b938';
 
 /// The selection the four goal tabs share.
 ///

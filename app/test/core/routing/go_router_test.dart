@@ -7,7 +7,9 @@ import 'package:app/core/routing/go_router.dart';
 import 'package:app/core/utils/app_exception.dart';
 import 'package:app/features/auth/data/auth_repository.dart';
 import 'package:app/features/auth/data/member_repository.dart';
+import 'package:app/features/admin/presentation/admin_page.dart';
 import 'package:app/features/goals/presentation/goals_page.dart';
+import 'package:app/features/groups/data/groups_repository.dart';
 import 'package:app/features/history/presentation/history_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,6 +24,9 @@ import '../../mocks.dart';
 
 const _withGroup = Member(id: 'user-1', name: 'Ada', groupId: 'group-1');
 const _withoutGroup = Member(id: 'user-1', name: 'Ada');
+
+/// What every test but the admin ones wants from `isGroupAdmin`.
+bool _notTheAdmin(Ref ref) => false;
 
 void main() {
   late ProviderContainer container;
@@ -40,8 +45,17 @@ void main() {
   Future<GoRouter> pumpRouter(
     WidgetTester tester, {
     required List<Override> overrides,
+    FutureOr<bool> Function(Ref ref) isAdmin = _notTheAdmin,
   }) async {
-    container = ProviderContainer(retry: noRetry, overrides: overrides);
+    container = ProviderContainer(
+      retry: noRetry,
+      overrides: [
+        // Nothing here has a Supabase client to read `groups.created_by`
+        // with, and the answer only decides whether Admin is on offer.
+        isGroupAdminProvider.overrideWith(isAdmin),
+        ...overrides,
+      ],
+    );
     addTearDown(container.dispose);
 
     await tester.pumpWidget(
@@ -183,6 +197,99 @@ void main() {
     });
   });
 
+  group('the admin branch', () {
+    testWidgets('is not on offer to a member who is not the admin', (
+      tester,
+    ) async {
+      await pumpRouter(tester, overrides: memberIs((ref) => _withGroup));
+
+      expect(find.widgetWithText(NavigationDestination, 'Admin'), findsNothing);
+      expect(find.widgetWithText(NavigationDestination, 'Goals'), findsOne);
+    });
+
+    testWidgets('turns a member away from /admin', (tester) async {
+      final router = await pumpRouter(
+        tester,
+        overrides: memberIs((ref) => _withGroup),
+      );
+
+      await goTo(tester, router, AppRoutes.admin);
+
+      expect(router.state.matchedLocation, AppRoutes.goals);
+      expect(find.byType(AdminPage, skipOffstage: false), findsNothing);
+    });
+
+    testWidgets('is in the bar for the admin, and opens their branch', (
+      tester,
+    ) async {
+      final router = await pumpRouter(
+        tester,
+        overrides: memberIs((ref) => _withGroup),
+        isAdmin: (ref) => true,
+      );
+
+      await tapDestination(tester, 'Admin');
+
+      expect(router.state.matchedLocation, AppRoutes.admin);
+      expect(find.byType(AdminPage), findsOneWidget);
+    });
+
+    testWidgets('lets the admin open /admin directly', (tester) async {
+      final router = await pumpRouter(
+        tester,
+        overrides: memberIs((ref) => _withGroup),
+        isAdmin: (ref) => true,
+      );
+
+      await goTo(tester, router, AppRoutes.admin);
+
+      expect(router.state.matchedLocation, AppRoutes.admin);
+    });
+
+    testWidgets('the bar still reaches the branches Admin sits between', (
+      tester,
+    ) async {
+      // Admin is the last branch of the shell and the second destination of
+      // the bar, so a tap after it has to go by route rather than by index.
+      final router = await pumpRouter(
+        tester,
+        overrides: memberIs((ref) => _withGroup),
+        isAdmin: (ref) => true,
+      );
+
+      await tapDestination(tester, 'History');
+      expect(router.state.matchedLocation, AppRoutes.history);
+
+      await tapDestination(tester, 'Group');
+      expect(router.state.matchedLocation, AppRoutes.group);
+
+      await tapDestination(tester, 'Admin');
+      expect(router.state.matchedLocation, AppRoutes.admin);
+    });
+
+    testWidgets('appears when the flag lands after the member does', (
+      tester,
+    ) async {
+      final admin = Completer<bool>();
+      final router = await pumpRouter(
+        tester,
+        overrides: memberIs((ref) => _withGroup),
+        isAdmin: (ref) => admin.future,
+      );
+      expect(find.widgetWithText(NavigationDestination, 'Admin'), findsNothing);
+
+      admin.complete(true);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.widgetWithText(NavigationDestination, 'Admin'),
+        findsOneWidget,
+      );
+      await goTo(tester, router, AppRoutes.admin);
+      expect(router.state.matchedLocation, AppRoutes.admin);
+    });
+  });
+
   group('home shell', () {
     testWidgets('the navigation bar moves between the three branches', (
       tester,
@@ -240,9 +347,8 @@ void main() {
     testWidgets('follows a sign-in and a sign-out without a restart', (
       tester,
     ) async {
-      when(
-        memberRepository.fetchMember('user-1'),
-      ).thenAnswer((_) async => _withGroup);
+      when(memberRepository.fetchMember('user-1'))
+          .thenAnswer((_) async => _withGroup);
 
       final router = await pumpSession(tester);
       expect(router.state.matchedLocation, AppRoutes.splash);
@@ -264,9 +370,8 @@ void main() {
       tester,
     ) async {
       final rows = <Member>[_withoutGroup, _withGroup];
-      when(
-        memberRepository.fetchMember('user-1'),
-      ).thenAnswer((_) async => rows.removeAt(0));
+      when(memberRepository.fetchMember('user-1'))
+          .thenAnswer((_) async => rows.removeAt(0));
 
       final router = await pumpSession(tester);
       userIds.add('user-1');

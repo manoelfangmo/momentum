@@ -35,12 +35,11 @@ class GoalsViewController extends _$GoalsViewController {
     state = state.copyWith(selectedMemberId: memberId);
   }
 
-  /// Points the Day tab at the day containing [date].
+  /// Points the Day tab at the day containing [date]. The way back to today
+  /// is this with the clock's date: the selector has no other kind of move.
   void selectDay(DateTime date) {
     state = state.copyWith(selectedDay: _dayOf(date));
   }
-
-  void resetDayToToday() => selectDay(ref.read(clockProvider)());
 }
 
 /// The member id of nobody, which is what the tabs see while the session is on

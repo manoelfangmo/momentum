@@ -11,10 +11,13 @@ abstract final class AppRoutes {
   /// Create or join a group. The only screen a member without a group sees.
   static const onboarding = '/onboarding';
 
-  /// The three branches of the signed-in shell, in navigation bar order.
+  /// The branches of the signed-in shell, in the order the shell holds them.
+  /// The navigation bar orders them for itself, and only the group admin is
+  /// offered [admin].
   static const goals = '/goals';
   static const history = '/history';
   static const group = '/group';
+  static const admin = '/admin';
 
   /// Pages that work without a session. The router's redirect leaves these
   /// alone for signed-out visitors.

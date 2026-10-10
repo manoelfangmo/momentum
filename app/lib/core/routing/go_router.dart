@@ -2,10 +2,12 @@ import 'package:app/core/domain/domain.dart';
 import 'package:app/core/routing/app_routes.dart';
 import 'package:app/core/routing/home_page.dart';
 import 'package:app/core/routing/splash_page.dart';
+import 'package:app/features/admin/presentation/admin_page.dart';
 import 'package:app/features/auth/data/member_repository.dart';
 import 'package:app/features/auth/presentation/sign_in_page.dart';
 import 'package:app/features/auth/presentation/sign_up_page.dart';
 import 'package:app/features/goals/presentation/goals_page.dart';
+import 'package:app/features/groups/data/groups_repository.dart';
 import 'package:app/features/groups/presentation/group_page.dart';
 import 'package:app/features/groups/presentation/onboarding_page.dart';
 import 'package:app/features/history/presentation/history_page.dart';
@@ -17,10 +19,10 @@ part 'go_router.g.dart';
 
 /// The one router, built once.
 ///
-/// Signing in, signing out, and joining a group all change where a visitor
-/// belongs. None of them rebuilds this provider: the member change notifies
-/// [_RouterRefresh], go_router re-runs [_redirectFor], and the existing
-/// navigator state survives.
+/// Signing in, signing out, joining a group, and turning out to be its admin
+/// all change where a visitor belongs. None of them rebuilds this provider:
+/// the change notifies [_RouterRefresh], go_router re-runs [_redirectFor],
+/// and the existing navigator state survives.
 ///
 /// Read this through `ref.watch` from the widget tree, the way `App` does.
 /// Riverpod pauses the subscription below while nothing is watching, and a
@@ -33,6 +35,14 @@ GoRouter goRouter(Ref ref) {
     (_, _) => refresh.notify(),
     onError: (_, _) => refresh.notify(),
   );
+  // The admin flag arrives after the member row it is read from, so the
+  // redirect has to run again when it lands or the admin never reaches
+  // `/admin` from a link.
+  ref.listen(
+    isGroupAdminProvider,
+    (_, _) => refresh.notify(),
+    onError: (_, _) => refresh.notify(),
+  );
   ref.onDispose(refresh.dispose);
 
   // Made here rather than at the top level so a second router in a test does
@@ -40,31 +50,27 @@ GoRouter goRouter(Ref ref) {
   final goalsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'goals');
   final historyNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'history');
   final groupNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'group');
+  final adminNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'admin');
 
   return GoRouter(
     initialLocation: AppRoutes.splash,
     refreshListenable: refresh,
-    redirect: (context, state) =>
-        _redirectFor(ref.read(currentMemberProvider), state.matchedLocation),
+    redirect: (context, state) => _redirectFor(
+      ref.read(currentMemberProvider),
+      isGroupAdmin: ref.read(isGroupAdminProvider).value ?? false,
+      location: state.matchedLocation,
+    ),
     routes: [
-      GoRoute(
-        path: AppRoutes.splash,
-        builder: (_, _) => const SplashPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.signIn,
-        builder: (_, _) => const SignInPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.signUp,
-        builder: (_, _) => const SignUpPage(),
-      ),
+      GoRoute(path: AppRoutes.splash, builder: (_, _) => const SplashPage()),
+      GoRoute(path: AppRoutes.signIn, builder: (_, _) => const SignInPage()),
+      GoRoute(path: AppRoutes.signUp, builder: (_, _) => const SignUpPage()),
       GoRoute(
         path: AppRoutes.onboarding,
         builder: (_, _) => const OnboardingPage(),
       ),
       // One branch per navigation bar destination, each with its own
-      // navigator, so switching destinations keeps the other two as they were.
+      // navigator, so switching destinations keeps the others as they were.
+      // New branches go on the end; the bar decides where they appear.
       StatefulShellRoute.indexedStack(
         builder: (_, _, shell) => HomePage(shell: shell),
         branches: [
@@ -95,6 +101,15 @@ GoRouter goRouter(Ref ref) {
               ),
             ],
           ),
+          StatefulShellBranch(
+            navigatorKey: adminNavigatorKey,
+            routes: [
+              GoRoute(
+                path: AppRoutes.admin,
+                builder: (_, _) => const AdminPage(),
+              ),
+            ],
+          ),
         ],
       ),
     ],
@@ -114,7 +129,11 @@ const _preHomeRoutes = <String>{
 ///
 /// Runs on every navigation, including the ones it causes itself, so each
 /// branch has to let its own destination pass or the router loops.
-String? _redirectFor(AsyncValue<Member?> currentMember, String location) {
+String? _redirectFor(
+  AsyncValue<Member?> currentMember, {
+  required bool isGroupAdmin,
+  required String location,
+}) {
   // Nothing to decide on yet: Supabase is still restoring the session. A
   // refresh keeps the previous value, so only start-up reaches this.
   if (currentMember.isLoading && !currentMember.hasValue) {
@@ -133,6 +152,12 @@ String? _redirectFor(AsyncValue<Member?> currentMember, String location) {
   if (member.groupId == null) {
     return location == AppRoutes.onboarding ? null : AppRoutes.onboarding;
   }
+
+  // The admin tab belongs to whoever created the group. Everyone else lands
+  // on Goals, including a visitor whose flag has not arrived yet: the
+  // navigation bar hides the destination until then, so the only way here
+  // that early is a typed link, and Goals is where it would have started.
+  if (location == AppRoutes.admin && !isGroupAdmin) return AppRoutes.goals;
 
   return _preHomeRoutes.contains(location) ? AppRoutes.goals : null;
 }

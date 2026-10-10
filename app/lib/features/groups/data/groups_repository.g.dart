@@ -251,4 +251,4 @@ final class IsGroupAdminProvider
   }
 }
 
-String _$isGroupAdminHash() => r'9bee1c97f8c3ee0364733512a55815498e3fc2dd';
+String _$isGroupAdminHash() => r'22a7ba1d13547fde070a787e51b282b75d83265d';

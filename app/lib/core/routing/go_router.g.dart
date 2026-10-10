@@ -10,10 +10,10 @@ part of 'go_router.dart';
 // ignore_for_file: type=lint, type=warning
 /// The one router, built once.
 ///
-/// Signing in, signing out, and joining a group all change where a visitor
-/// belongs. None of them rebuilds this provider: the member change notifies
-/// [_RouterRefresh], go_router re-runs [_redirectFor], and the existing
-/// navigator state survives.
+/// Signing in, signing out, joining a group, and turning out to be its admin
+/// all change where a visitor belongs. None of them rebuilds this provider:
+/// the change notifies [_RouterRefresh], go_router re-runs [_redirectFor],
+/// and the existing navigator state survives.
 ///
 /// Read this through `ref.watch` from the widget tree, the way `App` does.
 /// Riverpod pauses the subscription below while nothing is watching, and a
@@ -24,10 +24,10 @@ final goRouterProvider = GoRouterProvider._();
 
 /// The one router, built once.
 ///
-/// Signing in, signing out, and joining a group all change where a visitor
-/// belongs. None of them rebuilds this provider: the member change notifies
-/// [_RouterRefresh], go_router re-runs [_redirectFor], and the existing
-/// navigator state survives.
+/// Signing in, signing out, joining a group, and turning out to be its admin
+/// all change where a visitor belongs. None of them rebuilds this provider:
+/// the change notifies [_RouterRefresh], go_router re-runs [_redirectFor],
+/// and the existing navigator state survives.
 ///
 /// Read this through `ref.watch` from the widget tree, the way `App` does.
 /// Riverpod pauses the subscription below while nothing is watching, and a
@@ -38,10 +38,10 @@ final class GoRouterProvider
     with $Provider<GoRouter> {
   /// The one router, built once.
   ///
-  /// Signing in, signing out, and joining a group all change where a visitor
-  /// belongs. None of them rebuilds this provider: the member change notifies
-  /// [_RouterRefresh], go_router re-runs [_redirectFor], and the existing
-  /// navigator state survives.
+  /// Signing in, signing out, joining a group, and turning out to be its admin
+  /// all change where a visitor belongs. None of them rebuilds this provider:
+  /// the change notifies [_RouterRefresh], go_router re-runs [_redirectFor],
+  /// and the existing navigator state survives.
   ///
   /// Read this through `ref.watch` from the widget tree, the way `App` does.
   /// Riverpod pauses the subscription below while nothing is watching, and a
@@ -79,4 +79,4 @@ final class GoRouterProvider
   }
 }
 
-String _$goRouterHash() => r'6a56d76655c343c7cdd2728ea6182f5cdd5a9fc0';
+String _$goRouterHash() => r'17b156b9de6738d52c1f59acf58b45b968855aed';

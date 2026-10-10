@@ -37,11 +37,12 @@ app/lib/
 │   ├── domain/               # types shared by several features: Member, GoalType, Period
 │   ├── routing/              # GoRouter, AppRoutes, route base classes
 │   ├── utils/                # providers.dart (Supabase client, clock), extensions, toasts
-│   └── widgets/              # buttons, sheets, empty/error states used by more than one feature
+│   └── widgets/              # buttons, day selector, empty/error states used by more than one feature
 └── features/
     ├── auth/
     ├── groups/
     ├── goals/
+    ├── admin/
     ├── history/
     └── stats/
 
@@ -51,7 +52,7 @@ supabase/
 └── seed.sql
 ```
 
-Every feature uses the same four folders. A small feature can leave out `application/` when nothing needs to coordinate more than one repository. `stats` has no `data/` folder at all. It computes from goals other features already loaded.
+Every feature uses the same four folders. A small feature can leave out `application/` when nothing needs to coordinate more than one repository. `stats` has no `data/` folder at all. It computes from goals other features already loaded, and `admin` is `presentation/` only: it is a second way to read goals the goals feature already fetches.
 
 `app/lib/core/domain/` is for types that more than one feature needs. `Member` is used by auth, groups, and goals. `GoalType` and `Period` are used by goals, history, and stats. A type used by only one feature stays in that feature's `domain/`.
 
@@ -149,6 +150,28 @@ Future<List<Goal>> fetchGoals({
 A simpler read skips the controller. The group page watches `groupMembersProvider(groupId)`, which calls `GroupsRepository.fetchMembers` directly. Use a controller when the widget needs data assembled from more than one provider. Use the repository provider when one query is the whole story.
 
 `groupGoalsForPeriodProvider(groupId, period)` is the admin's read: one query for every member's goals in that period, ordered by owner and then `created_at` so the page can group rows under a member without sorting them again. It is a separate provider rather than a loop over `goalsForPeriodProvider` because the admin tab shows the whole group at once.
+
+## The admin tab
+
+`features/admin/` is the `/admin` branch, and it owns no data of its own:
+
+```
+features/admin/presentation/
+├── admin_page.dart                   # Day / Week / Month / Year tabs
+├── controllers/
+│   ├── admin_view_controller.dart    # the day the Day tab is on
+│   └── admin_tab_controller.dart     # adminPeriod + adminTabData
+├── models/
+│   └── member_goals.dart             # one member and their goals
+└── widgets/
+    └── admin_tab_view.dart           # the member sections of one tab
+```
+
+`adminTabData(type)` is the goals tabs' `goalTabData` read sideways. It takes the period from `adminPeriod(type)` — the selected day on Day, the period containing now on the other three — then awaits `groupGoalsForPeriodProvider` and `groupMembersProvider` together and files each goal under its owner. Every member gets a `MemberGoals`, including the ones with nothing set, because an empty section is what the admin is looking for. The admin's own section is first, then everyone else in the order the members read returns them, which is by name.
+
+`AdminViewController` holds the Day tab's date and nothing else. It is deliberately not a field on `GoalsViewController`: the admin moves between the two screens to compare one member's view with the group's, and a date picked on one has no business moving the other. Week, Month and Year have no date to move at all — ended periods are History's, and the admin has no History.
+
+The sections are drawn with the widgets that already exist: `GoalTile` for each goal, so the admin gets whatever `goalPermissions` grants them on another member's goal, and `CompletionBadge(completionFor(goals))` for each member's rate. The Day tab's date control is `DaySelector` in `core/widgets/`, which holds nothing: it takes the day on screen and gives back the one chosen, so the goals tabs and the admin tabs can each point it at their own notifier.
 
 ## Writing data: two patterns
 
@@ -295,15 +318,18 @@ Completion percentage is a domain function in `features/stats/domain/`. `complet
 
 ## Routing
 
-Signed-in sections are branches of one `StatefulShellRoute` in `app/lib/core/routing/go_router.dart`. Each branch has its own navigator key, so switching from Goals to History keeps each section's tab and scroll position. The branches are `/goals`, `/history`, and `/group`. The shell widget is `HomePage`, which draws the bottom navigation bar.
+Signed-in sections are branches of one `StatefulShellRoute` in `app/lib/core/routing/go_router.dart`. Each branch has its own navigator key, so switching from Goals to History keeps each section's tab and scroll position. The branches are `/goals`, `/history`, `/group`, and `/admin`, in that order. The shell widget is `HomePage`, which draws the bottom navigation bar.
 
-Path strings live in `AppRoutes` (`app/lib/core/routing/app_routes.dart`). The router's `redirect` does three things:
+Path strings live in `AppRoutes` (`app/lib/core/routing/app_routes.dart`). The router's `redirect` does four things:
 
 - sends signed-out users to sign-in
 - sends signed-in users with no group to `/onboarding`
 - sends signed-in users who have a group away from sign-in and onboarding
+- sends anyone but the group admin away from `/admin`, to `/goals`
 
-`AppRoutes.publicRoutes` lists pages that work without a session: sign-in and sign-up. The router is built once in a provider and refreshed through `refreshListenable` when `currentMemberProvider` changes. It is never rebuilt on each change.
+`AppRoutes.publicRoutes` lists pages that work without a session: sign-in and sign-up. The router is built once in a provider and refreshed through `refreshListenable` when `currentMemberProvider` or `isGroupAdminProvider` changes. It is never rebuilt on each change. The admin flag is read the same way everywhere: one that has not resolved yet counts as not the admin.
+
+`HomePage` hides the Admin destination from everyone else, so the bar it draws has three destinations for most members and four for the admin. Branch order and bar order are not the same list — Admin was appended as the last branch and sits second in the bar — so each destination names its route and `HomePage` looks up the branch holding that route before calling `goBranch`. Adding a branch means appending it in `go_router.dart` and adding a `_Destination` wherever it belongs in the bar.
 
 Routes that take parameters are classes in the feature, not inline `GoRoute`s. Each one extends `ParamAppRoute` or `SimpleAppRoute` from `app/lib/core/routing/routing_interfaces.dart` and lives in that feature's `presentation/routes.dart`.
 

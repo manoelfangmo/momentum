@@ -1,12 +1,14 @@
 import 'package:app/core/domain/domain.dart';
+import 'package:app/core/utils/providers.dart';
 import 'package:app/core/widgets/app_loading.dart';
+import 'package:app/core/widgets/day_selector.dart';
 import 'package:app/core/widgets/empty_state.dart';
 import 'package:app/core/widgets/error_retry.dart';
 import 'package:app/features/auth/data/member_repository.dart';
 import 'package:app/features/goals/data/goals_repository.dart';
 import 'package:app/features/goals/presentation/controllers/goal_tab_controller.dart';
+import 'package:app/features/goals/presentation/controllers/goals_view_controller.dart';
 import 'package:app/features/goals/presentation/models/goal_tab_data.dart';
-import 'package:app/features/goals/presentation/widgets/day_selector.dart';
 import 'package:app/features/goals/presentation/widgets/goal_tile.dart';
 import 'package:app/features/groups/data/groups_repository.dart';
 import 'package:app/features/stats/domain/compute_completion.dart';
@@ -58,7 +60,7 @@ class _TabBody extends ConsumerWidget {
         _TabHeader(tab: tab),
         // Only the Day tab has a date to move: the others always show the
         // period containing now.
-        if (type == GoalType.daily) const DaySelector(),
+        if (type == GoalType.daily) const _GoalsDaySelector(),
         Expanded(
           child: RefreshIndicator(
             onRefresh: () => _refresh(ref),
@@ -90,6 +92,21 @@ class _TabBody extends ConsumerWidget {
     return ref
         .read(goalTabDataProvider(type).future)
         .then((_) {}, onError: (_, _) {});
+  }
+}
+
+/// The shared day selector pointed at the selection the goal tabs share, so
+/// moving a day here moves the Day tab and nothing on the admin screen.
+class _GoalsDaySelector extends ConsumerWidget {
+  const _GoalsDaySelector();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return DaySelector(
+      selectedDay: ref.watch(goalsViewControllerProvider).selectedDay,
+      now: ref.watch(clockProvider)(),
+      onDaySelected: ref.read(goalsViewControllerProvider.notifier).selectDay,
+    );
   }
 }
 

@@ -75,7 +75,7 @@ final class GoalActionControllerProvider
 }
 
 String _$goalActionControllerHash() =>
-    r'4033353f0e50138fc507af6238940a03823fd2ae';
+    r'21e7ab2a6a89988586c755f3c4c00dc0dadf27f8';
 
 /// Runs one write against one goal and holds its progress.
 ///
