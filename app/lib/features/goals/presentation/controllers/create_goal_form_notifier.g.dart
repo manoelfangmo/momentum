@@ -57,7 +57,7 @@ final class CreateGoalFormNotifierProvider
 }
 
 String _$createGoalFormNotifierHash() =>
-    r'0fb77359bd533e83c71752e215520a6e035f143a';
+    r'b0112a07588d1ba0ba51e30e5e05fead53158348';
 
 /// The draft behind the new goal sheet, and the submit that turns it into a
 /// row.

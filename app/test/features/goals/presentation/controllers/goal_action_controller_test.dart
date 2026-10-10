@@ -36,14 +36,19 @@ void main() {
   setUp(() {
     goals = MockGoalsRepository();
     when(goals.verify(any)).thenAnswer((_) async => _goal);
-    when(
-      goals.setStatus(any, any),
-    ).thenAnswer((_) async => _goal);
+    when(goals.unverify(any)).thenAnswer((_) async => _goal);
+    when(goals.setStatus(any, any)).thenAnswer((_) async => _goal);
     when(goals.updateTitle(any, any)).thenAnswer((_) async => _goal);
     when(goals.deleteGoal(any)).thenAnswer((_) async {});
     when(
       goals.fetchGoals(
         ownerId: anyNamed('ownerId'),
+        period: anyNamed('period'),
+      ),
+    ).thenAnswer((_) async => []);
+    when(
+      goals.fetchGroupGoals(
+        groupId: anyNamed('groupId'),
         period: anyNamed('period'),
       ),
     ).thenAnswer((_) async => []);
@@ -75,6 +80,13 @@ void main() {
     await controller(_goal.id).verify(_goal);
 
     verify(goals.verify(_goal.id)).called(1);
+    expect(state(_goal.id).hasError, isFalse);
+  });
+
+  test('unverify forwards the goal id', () async {
+    await controller(_goal.id).unverify(_goal);
+
+    verify(goals.unverify(_goal.id)).called(1);
     expect(state(_goal.id).hasError, isFalse);
   });
 
@@ -129,6 +141,16 @@ void main() {
     await container.read(goalsForPeriodProvider('user-1', _today).future);
 
     verify(goals.fetchGoals(ownerId: 'user-1', period: _today)).called(2);
+  });
+
+  test('re-reads the admin tab so a change there updates too', () async {
+    container.listen(groupGoalsForPeriodProvider('group-1', _today), (_, _) {});
+    await container.read(groupGoalsForPeriodProvider('group-1', _today).future);
+
+    await controller(_goal.id).unverify(_goal);
+    await container.read(groupGoalsForPeriodProvider('group-1', _today).future);
+
+    verify(goals.fetchGroupGoals(groupId: 'group-1', period: _today)).called(2);
   });
 
   test('re-reads history so a past goal updates there too', () async {

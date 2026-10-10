@@ -20,7 +20,7 @@ class GoalActionController extends _$GoalActionController {
   @override
   FutureOr<void> build(String goalId) {}
 
-  /// Sets the owner's own unverified goal to [status].
+  /// Sets an unverified goal to [status]. The owner or the admin may.
   Future<void> setStatus(Goal goal, GoalStatus status) {
     return _run(
       () => ref.read(goalsRepositoryProvider).setStatus(goal.id, status),

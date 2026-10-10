@@ -21,11 +21,10 @@
 --   M0020 goal_not_verified
 --   M0021 member_not_in_group
 --
--- M0010, M0014, and M0015 keep their SQLSTATE under a new token. The check is
--- in the same place and means the same thing to a caller; the rule behind it
--- widened from the owner to the owner or the admin, so the old names
--- (only_owner_can_change_status, only_owner_can_edit, only_owner_can_delete)
--- no longer describe it.
+-- M0010, M0014, and M0015 keep their SQLSTATE under new tokens
+-- (not_allowed_to_change_status, not_allowed_to_edit, not_allowed_to_delete).
+-- The check is in the same place and means the same thing to a caller; the
+-- rule behind it widened from the owner to the owner or the admin.
 --
 -- Who may do what, with V for a verified goal:
 --

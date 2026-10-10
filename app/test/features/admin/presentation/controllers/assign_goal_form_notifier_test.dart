@@ -52,6 +52,13 @@ void main() {
         period: anyNamed('period'),
       ),
     ).thenAnswer((_) async => []);
+    when(
+      goals.fetchGoalsBefore(
+        ownerId: anyNamed('ownerId'),
+        type: anyNamed('type'),
+        before: anyNamed('before'),
+      ),
+    ).thenAnswer((_) async => []);
   });
 
   /// The notifier autodisposes, so a listener stands in for the open sheet and
@@ -146,6 +153,33 @@ void main() {
 
     verify(goals.fetchGroupGoals(groupId: 'group-1', period: period)).called(2);
     verify(goals.fetchGoals(ownerId: 'user-2', period: period)).called(2);
+  });
+
+  test('re-reads history along with the other two lists', () async {
+    final (container, form) = formContainer();
+    final before = Period.containing(_now, GoalType.daily).start;
+    container.listen(
+      historyGoalsProvider('user-2', GoalType.daily, before),
+      (_, _) {},
+    );
+    await container.read(
+      historyGoalsProvider('user-2', GoalType.daily, before).future,
+    );
+
+    form.ownerChanged('user-2');
+    form.titleChanged('Run 5k');
+    await form.submit(type: GoalType.daily);
+    await container.read(
+      historyGoalsProvider('user-2', GoalType.daily, before).future,
+    );
+
+    verify(
+      goals.fetchGoalsBefore(
+        ownerId: 'user-2',
+        type: GoalType.daily,
+        before: before,
+      ),
+    ).called(2);
   });
 
   test('keeps the draft when the save fails, and rethrows', () async {

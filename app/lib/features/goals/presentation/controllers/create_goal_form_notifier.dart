@@ -32,10 +32,14 @@ class CreateGoalFormNotifier extends _$CreateGoalFormNotifier {
         .read(goalServiceProvider)
         .createGoal(title: state.title.trim(), type: type);
 
-    // The whole family: the new goal belongs to the current period of [type],
-    // but History and the other tabs read the same provider, and a stale list
-    // somewhere else is not worth naming each key to avoid.
+    // The whole of all three families. The goal shows on the tab the sheet
+    // was opened from, and on the admin tab when the member creating it is
+    // the admin; History is here because the three goal lists invalidate
+    // together everywhere, and a stale row somewhere else is not worth
+    // naming each key to avoid.
     ref.invalidate(goalsForPeriodProvider);
+    ref.invalidate(groupGoalsForPeriodProvider);
+    ref.invalidate(historyGoalsProvider);
     state = const CreateGoalFormState();
   }
 }

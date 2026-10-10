@@ -46,11 +46,13 @@ class AssignGoalFormNotifier extends _$AssignGoalFormNotifier {
         .read(goalServiceProvider)
         .assignGoal(ownerId: ownerId, title: state.title.trim(), type: type);
 
-    // The whole of both families: the new goal lands in the admin tab this
-    // was opened from and in the owner's own tab, and a stale list somewhere
-    // else is not worth naming each key to avoid.
+    // The whole of all three families: the new goal lands in the admin tab
+    // this was opened from and in the owner's own tab. History is here
+    // because the three goal lists invalidate together everywhere, and a
+    // stale list somewhere else is not worth naming each key to avoid.
     ref.invalidate(groupGoalsForPeriodProvider);
     ref.invalidate(goalsForPeriodProvider);
+    ref.invalidate(historyGoalsProvider);
     state = const AssignGoalFormState();
   }
 }

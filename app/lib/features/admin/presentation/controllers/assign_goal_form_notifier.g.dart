@@ -57,7 +57,7 @@ final class AssignGoalFormNotifierProvider
 }
 
 String _$assignGoalFormNotifierHash() =>
-    r'1b1097653d018ff46786d25b84ceac5fdebbf06d';
+    r'8387f8da2475b792961f2a87216aeaf6aad244ae';
 
 /// The draft behind the assign sheet, and the submit that turns it into a
 /// row someone else owns.

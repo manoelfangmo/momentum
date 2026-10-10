@@ -178,7 +178,7 @@ The sections are drawn with the widgets that already exist: `GoalTile` for each 
 
 `AssignGoalSheet` is the one thing the admin feature writes, and the only part of it that is not a read of somebody else's provider. The page's floating button opens it on the type of the tab in front, the way the goals page opens `CreateGoalSheet`. The sheet is that sheet plus the field it has no use for: a dropdown of `groupMembersProvider` with the admin listed as "Me". Nothing is selected when it opens, because assigning to the wrong person leaves a goal somebody has to delete. The deadline is shown and not chosen — both sheets render `CurrentPeriodDueLabel`, which reads `clockProvider` and names the end of the current period, so the Day tab's date picker never reaches it.
 
-`AssignGoalFormNotifier` holds the draft and submits it through `GoalService.assignGoal`, then invalidates `groupGoalsForPeriodProvider` and `goalsForPeriodProvider`: the new goal lands on the admin tab it was made from and on its owner's own tab. The admin picking themselves is not a branch in Dart. `assign_goal` writes `assigned_by` only when the owner is somebody else, so a goal the admin sets for themselves comes back as a normal own goal.
+`AssignGoalFormNotifier` holds the draft and submits it through `GoalService.assignGoal`, then invalidates `goalsForPeriodProvider`, `groupGoalsForPeriodProvider`, and `historyGoalsProvider`: the new goal lands on the admin tab it was made from and on its owner's own tab. The admin picking themselves is not a branch in Dart. `assign_goal` writes `assigned_by` only when the owner is somebody else, so a goal the admin sets for themselves comes back as a normal own goal.
 
 ## Writing data: two patterns
 
@@ -191,7 +191,7 @@ await ref.read(groupsRepositoryProvider).joinGroup(groupId);
 ref.invalidate(currentMemberProvider);
 ```
 
-Verifying a goal is the same shape. The tile calls `GoalsRepository.verify(goalId)`, then invalidates the tab, history, and stats providers that show that goal. Changing status calls `GoalsRepository.setStatus(goalId, status)` the same way, as does `unverify(goalId)`, and so do `updateTitle(goalId, title)` and `deleteGoal(goalId)` behind the tile's menu. All five go through `GoalActionController`, a family keyed by goal id that holds one call's progress and runs the invalidations.
+Verifying a goal is the same shape. The tile calls `GoalsRepository.verify(goalId)`, then invalidates `goalsForPeriodProvider`, `groupGoalsForPeriodProvider`, and `historyGoalsProvider`. Changing status calls `GoalsRepository.setStatus(goalId, status)` the same way, as does `unverify(goalId)`, and so do `updateTitle(goalId, title)` and `deleteGoal(goalId)` behind the tile's menu. All five go through `GoalActionController`, a family keyed by goal id that holds one call's progress and runs the invalidations.
 
 `ref.watch` subscribes and rebuilds. `ref.read` fires an action and does not subscribe. `ref.invalidate` drops the cached value so the next watch refetches.
 
@@ -205,7 +205,9 @@ Future<void> submit({required GoalType type}) async {
         title: state.title.trim(),
         type: type,
       );
-  ref.invalidate(goalTabDataProvider(type));
+  ref.invalidate(goalsForPeriodProvider);
+  ref.invalidate(groupGoalsForPeriodProvider);
+  ref.invalidate(historyGoalsProvider);
 }
 ```
 
