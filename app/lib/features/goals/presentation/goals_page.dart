@@ -1,4 +1,5 @@
 import 'package:app/core/domain/domain.dart';
+import 'package:app/core/utils/providers.dart';
 import 'package:app/features/auth/data/member_repository.dart';
 import 'package:app/features/goals/presentation/controllers/goals_view_controller.dart';
 import 'package:app/features/goals/presentation/widgets/create_goal_sheet.dart';
@@ -45,25 +46,32 @@ class GoalsPage extends ConsumerWidget {
 /// Opens the new goal sheet for whichever tab is in front.
 ///
 /// Nothing here while the tabs are on somebody else: members only set goals
-/// for themselves, so there would be no goal for this button to make.
+/// for themselves, so there would be no goal for this button to make. Nothing
+/// here off the current period either: creating always lands in now, and
+/// navigating to a past period is for updating what is already there.
 class _NewGoalButton extends ConsumerWidget {
   const _NewGoalButton();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final viewerId = ref.watch(currentMemberProvider).value?.id;
-    final selectedId = ref.watch(goalsViewControllerProvider).selectedMemberId;
-    if (viewerId == null || selectedId != viewerId) {
+    final view = ref.watch(goalsViewControllerProvider);
+    if (viewerId == null || view.selectedMemberId != viewerId) {
       return const SizedBox.shrink();
     }
 
     // The tab index is the type: both come from `GoalType.values`, in order.
     // Rebuilt on every tab change so the label names the tab in front.
     final tabs = DefaultTabController.of(context);
+    final now = ref.watch(clockProvider)();
     return AnimatedBuilder(
       animation: tabs,
       builder: (context, child) {
         final type = GoalType.values[tabs.index];
+        final visible = Period.containing(view.selectedDay, type);
+        final current = Period.containing(now, type);
+        if (visible != current) return const SizedBox.shrink();
+
         return FloatingActionButton.extended(
           onPressed: () => showCreateGoalSheet(context, type),
           icon: const Icon(Icons.add),

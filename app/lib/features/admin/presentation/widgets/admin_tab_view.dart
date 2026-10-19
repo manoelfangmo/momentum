@@ -1,7 +1,7 @@
 import 'package:app/core/domain/domain.dart';
 import 'package:app/core/utils/providers.dart';
 import 'package:app/core/widgets/app_loading.dart';
-import 'package:app/core/widgets/day_selector.dart';
+import 'package:app/core/widgets/period_navigator.dart';
 import 'package:app/core/widgets/error_retry.dart';
 import 'package:app/features/admin/presentation/controllers/admin_tab_controller.dart';
 import 'package:app/features/admin/presentation/controllers/admin_view_controller.dart';
@@ -57,9 +57,7 @@ class _TabBody extends ConsumerWidget {
     return Column(
       children: [
         _PeriodHeader(period: ref.watch(adminPeriodProvider(type))),
-        // Only the Day tab has a date to move: the others always show the
-        // period containing now.
-        if (type == GoalType.daily) const _AdminDaySelector(),
+        _AdminPeriodNavigator(type: type),
         Expanded(
           child: RefreshIndicator(
             onRefresh: () => _refresh(ref),
@@ -112,14 +110,17 @@ class _PeriodHeader extends StatelessWidget {
   }
 }
 
-/// The shared day selector pointed at the admin's own date, so moving a day
-/// here leaves the goals tabs where they were.
-class _AdminDaySelector extends ConsumerWidget {
-  const _AdminDaySelector();
+/// The shared period navigator pointed at the admin's own date, so moving a
+/// date here leaves the goals tabs where they were.
+class _AdminPeriodNavigator extends ConsumerWidget {
+  const _AdminPeriodNavigator({required this.type});
+
+  final GoalType type;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return DaySelector(
+    return PeriodNavigator(
+      type: type,
       selectedDay: ref.watch(adminViewControllerProvider),
       now: ref.watch(clockProvider)(),
       onDaySelected: ref.read(adminViewControllerProvider.notifier).selectDay,

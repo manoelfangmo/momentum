@@ -70,6 +70,30 @@ final class Period {
 
   Period next() => Period.containing(end, type);
 
+  /// Local midnight [steps] periods of [type] from [day], keeping the
+  /// position inside the period.
+  ///
+  /// A week moves seven calendar days so the weekday stays put. A month
+  /// keeps the day-of-month, or the last day of the target month when that
+  /// date does not exist (31 October → 30 September). A year keeps the month
+  /// and day the same way (29 February → 28 February in a common year).
+  ///
+  /// Built with [DateTime] calendar constructors so a DST shift does not
+  /// skip or repeat a local day the way `Duration(days:)` would.
+  static DateTime stepDay(DateTime day, GoalType type, {required int steps}) {
+    final local = DateTime(day.year, day.month, day.day);
+    switch (type) {
+      case GoalType.daily:
+        return DateTime(local.year, local.month, local.day + steps);
+      case GoalType.weekly:
+        return DateTime(local.year, local.month, local.day + 7 * steps);
+      case GoalType.monthly:
+        return _shiftMonths(local, steps);
+      case GoalType.yearly:
+        return _shiftMonths(local, 12 * steps);
+    }
+  }
+
   /// True when [instant] is in `[start, end)`.
   bool contains(DateTime instant) =>
       !instant.isBefore(start) && instant.isBefore(end);
@@ -91,6 +115,15 @@ final class Period {
 
   @override
   String toString() => 'Period(${type.name}, $start → $end)';
+}
+
+/// First of the month [months] away from [day], then [day]'s day-of-month
+/// clamped to what that month actually has.
+DateTime _shiftMonths(DateTime day, int months) {
+  final firstOfTarget = DateTime(day.year, day.month + months);
+  final lastDay = DateTime(firstOfTarget.year, firstOfTarget.month + 1, 0).day;
+  final clamped = day.day > lastDay ? lastDay : day.day;
+  return DateTime(firstOfTarget.year, firstOfTarget.month, clamped);
 }
 
 final _dayLabel = DateFormat('EEE, MMM d', 'en_US');

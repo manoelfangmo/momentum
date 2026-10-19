@@ -102,6 +102,43 @@ void main() {
     expect(find.text('Due: end of this week (Sun, Oct 11)'), findsOneWidget);
   });
 
+  testWidgets('there is no assign button off the current period', (
+    tester,
+  ) async {
+    await pumpPage(tester);
+
+    await tester.tap(find.byTooltip('Previous day'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.text('Today'), findsOneWidget);
+  });
+
+  testWidgets('the assign button returns on the current period', (
+    tester,
+  ) async {
+    await pumpPage(tester);
+    await tester.tap(find.byTooltip('Previous day'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Today'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Assign Day goal'), findsOneWidget);
+  });
+
+  testWidgets('last month hides the Month button', (tester) async {
+    await pumpPage(tester);
+    await tester.tap(find.text('Month'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Previous month'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.text('This month'), findsOneWidget);
+  });
+
   testWidgets('each tab shows its own period, for everyone', (tester) async {
     when(
       goals.fetchGroupGoals(

@@ -71,11 +71,12 @@ void main() {
   test('the Day tab asks for the selected day', () async {
     final day = Period.containing(DateTime(2026, 10, 5), GoalType.daily);
     final goal = goalCalled('Run 5k', day);
-    when(
-      repository.fetchGoals(ownerId: 'user-1', period: day),
-    ).thenAnswer((_) async => [goal]);
+    when(repository.fetchGoals(ownerId: 'user-1', period: day))
+        .thenAnswer((_) async => [goal]);
     final c = container();
-    c.read(goalsViewControllerProvider.notifier).selectDay(DateTime(2026, 10, 5, 21));
+    c
+        .read(goalsViewControllerProvider.notifier)
+        .selectDay(DateTime(2026, 10, 5, 21));
 
     final tab = await read(c, GoalType.daily);
 
@@ -83,13 +84,27 @@ void main() {
     expect(tab.goals, [goal]);
   });
 
-  test('the other tabs stay on the current period', () async {
+  test('every tab follows the selected day', () async {
+    final picked = DateTime(2026, 9, 2);
     final c = container();
-    c.read(goalsViewControllerProvider.notifier).selectDay(DateTime(2026, 9, 2));
+    c.read(goalsViewControllerProvider.notifier).selectDay(picked);
 
-    for (final type in [GoalType.weekly, GoalType.monthly, GoalType.yearly]) {
+    for (final type in GoalType.values) {
       final tab = await read(c, type);
-      expect(tab.period, Period.containing(_now, type));
+      expect(tab.period, Period.containing(picked, type));
+    }
+  });
+
+  test('picking a member does not change the day', () async {
+    final picked = DateTime(2026, 9, 2);
+    final c = container();
+    c.read(goalsViewControllerProvider.notifier).selectDay(picked);
+    c.read(goalsViewControllerProvider.notifier).selectMember('user-2');
+
+    for (final type in GoalType.values) {
+      final tab = await read(c, type);
+      expect(tab.memberId, 'user-2');
+      expect(tab.period, Period.containing(picked, type));
     }
   });
 

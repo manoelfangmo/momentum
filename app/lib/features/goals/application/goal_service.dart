@@ -51,7 +51,7 @@ class GoalService {
   ///
   /// Here rather than on the repository for the same reason as [createGoal]:
   /// the deadline is computed from the clock. It is always the current
-  /// period, never the day the admin has picked on the Day tab — an assigned
+  /// period, never the date the admin has picked on a tab — an assigned
   /// goal is for now.
   ///
   /// No group argument and no check that the admin is the admin: the RPC

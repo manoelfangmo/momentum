@@ -3,7 +3,8 @@ import 'dart:async';
 import 'package:app/core/domain/domain.dart';
 import 'package:app/core/utils/app_exception.dart';
 import 'package:app/core/utils/providers.dart';
-import 'package:app/core/widgets/day_selector.dart';
+import 'package:app/core/widgets/period_navigator.dart';
+import 'package:app/features/goals/presentation/widgets/goal_status_picker.dart';
 import 'package:app/features/admin/presentation/controllers/admin_view_controller.dart';
 import 'package:app/features/admin/presentation/widgets/admin_tab_view.dart';
 import 'package:app/features/auth/data/member_repository.dart';
@@ -170,27 +171,84 @@ void main() {
     ).called(1);
   });
 
-  testWidgets('the other tabs have no day to move', (tester) async {
-    for (final type in [GoalType.weekly, GoalType.monthly, GoalType.yearly]) {
+  testWidgets('every tab has a navigator', (tester) async {
+    for (final type in GoalType.values) {
       await pumpTab(tester, type);
 
-      expect(find.byType(DaySelector), findsNothing);
+      expect(find.byType(PeriodNavigator), findsOneWidget);
       expect(find.text(Period.containing(_now, type).label), findsOneWidget);
     }
   });
 
-  testWidgets('a day picked here does not follow the Day tab back', (
-    tester,
-  ) async {
+  testWidgets('a day picked on Day moves Week with it', (tester) async {
     container
         .read(adminViewControllerProvider.notifier)
         .selectDay(DateTime(2026, 10, 2));
 
     await pumpTab(tester, GoalType.weekly);
 
-    // The week is still the one containing now, not the one containing the
-    // date the Day tab is on.
-    expect(find.text('Week of Oct 5'), findsOneWidget);
+    expect(find.text('Last week'), findsOneWidget);
+    expect(find.text('Week of Sep 28'), findsOneWidget);
+  });
+
+  testWidgets('an empty past period still lists every member', (tester) async {
+    container
+        .read(adminViewControllerProvider.notifier)
+        .selectDay(DateTime(2026, 9, 30));
+
+    await pumpTab(tester, GoalType.weekly);
+
+    expect(find.text('Ada'), findsOneWidget);
+    expect(find.text('Grace'), findsOneWidget);
+    expect(find.text('No goals'), findsNWidgets(2));
+  });
+
+  testWidgets('a past week still offers the admin edit, delete and un-verify', (
+    tester,
+  ) async {
+    final lastWeekDay = DateTime(2026, 9, 30);
+    final lastWeek = Period.containing(lastWeekDay, GoalType.weekly);
+    container.read(adminViewControllerProvider.notifier).selectDay(lastWeekDay);
+    when(goals.fetchGroupGoals(groupId: 'group-1', period: lastWeek))
+        .thenAnswer(
+          (_) async => [
+            goalCalled(
+              'Long run',
+              ownerId: _grace.id,
+              period: lastWeek,
+              status: GoalStatus.complete,
+              verified: true,
+            ),
+          ],
+        );
+
+    await pumpTab(tester, GoalType.weekly);
+
+    expect(find.text('Long run'), findsOneWidget);
+    expect(find.text('No goals'), findsOneWidget);
+    expect(find.byTooltip('Goal options'), findsOneWidget);
+    expect(find.text('Un-verify'), findsOneWidget);
+    expect(find.text('Verify'), findsNothing);
+    expect(find.byType(GoalStatusPicker), findsNothing);
+  });
+
+  testWidgets('a past week still offers status on an unverified goal', (
+    tester,
+  ) async {
+    final lastWeekDay = DateTime(2026, 9, 30);
+    final lastWeek = Period.containing(lastWeekDay, GoalType.weekly);
+    container.read(adminViewControllerProvider.notifier).selectDay(lastWeekDay);
+    when(goals.fetchGroupGoals(groupId: 'group-1', period: lastWeek))
+        .thenAnswer(
+          (_) async => [
+            goalCalled('Long run', ownerId: _grace.id, period: lastWeek),
+          ],
+        );
+
+    await pumpTab(tester, GoalType.weekly);
+
+    expect(find.byType(GoalStatusPicker), findsOneWidget);
+    expect(find.byTooltip('Goal options'), findsOneWidget);
   });
 
   testWidgets('shows a spinner while the group loads', (tester) async {

@@ -35,8 +35,8 @@ class GoalsViewController extends _$GoalsViewController {
     state = state.copyWith(selectedMemberId: memberId);
   }
 
-  /// Points the Day tab at the day containing [date]. The way back to today
-  /// is this with the clock's date: the selector has no other kind of move.
+  /// Points every tab at the day containing [date]. The way back to today
+  /// is this with the clock's date: the navigator has no other kind of move.
   void selectDay(DateTime date) {
     state = state.copyWith(selectedDay: _dayOf(date));
   }
@@ -48,6 +48,6 @@ const noMemberSelected = '';
 
 /// Local midnight of the day containing [instant].
 ///
-/// Through [Period] so the Day tab and this agree on where a day starts.
+/// Through [Period] so the tabs and this agree on where a day starts.
 DateTime _dayOf(DateTime instant) =>
     Period.containing(instant, GoalType.daily).start;
