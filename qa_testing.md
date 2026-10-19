@@ -59,7 +59,7 @@ update goals set deadline = now() - interval '8 days' where title = 'Past goal';
 - [ ] **NEW-02** The "Due" line shows end of today / this Sunday / last day of this month / Dec 31.
 - [ ] **NEW-03** Save → goal appears in that tab immediately as **Not started**, not verified.
 - [ ] **NEW-04** Title empty, whitespace only, or 141 chars → validation error; 140 chars saves.
-- [ ] **NEW-05** On the Day tab, pick tomorrow in the date picker, then create a goal → deadline is still end of **today** (goal does not appear on tomorrow).
+- [ ] **NEW-05** Create a Day goal from the current period → deadline is end of **today**. There is no UI to backdate: the + button is hidden on any other day.
 - [ ] **NEW-06** Pick another member in the member picker → + button is hidden.
 - [ ] **NEW-07** Goal does not appear in other tabs (a Week goal is not on the Day tab).
 
@@ -67,13 +67,18 @@ update goals set deadline = now() - interval '8 days' where title = 'Past goal';
 
 - [ ] **VIEW-01** Each tab defaults to the signed-in member's goals, header shows the period ("Week of Oct 5") and "Your goals".
 - [ ] **VIEW-02** Member picker → choose Cam → every tab now shows Cam's goals with "Cam's goals". Switching tabs keeps Cam selected.
-- [ ] **VIEW-03** Day tab: ‹ › arrows move one day; label reads Today / Yesterday / Tomorrow / date; "Today" button returns.
-- [ ] **VIEW-04** Day tab date picker → choose a past date with goals → those goals show.
-- [ ] **VIEW-05** Changing the Day date does **not** change Week/Month/Year content.
-- [ ] **VIEW-06** Changing member keeps the selected Day date.
-- [ ] **VIEW-07** Empty tab shows an empty state, not a blank screen.
-- [ ] **VIEW-08** Pull to refresh picks up a goal another account just created.
-- [ ] **VIEW-09** Overdue badge appears on a goal past its deadline that isn't Complete + Verified (use the SQL snippet).
+- [ ] **VIEW-03** Every tab has the same navigator (chevrons, label, jump-to-date, reset). Day: ‹ › move one day; label reads Today / Yesterday / Tomorrow / date; "Today" returns. Reset is hidden while already on today.
+- [ ] **VIEW-04** Date picker on any tab → choose a past date with goals → those goals show. All four tabs follow that date.
+- [ ] **VIEW-05** Shared date: changing the date on any tab changes the other three to the period of that type that contains the same date (not "now"). Header is always `Period.label`; the navigator uses Today / This week / This month / This year (and Yesterday / Last week / … when adjacent).
+- [ ] **VIEW-06** Changing member keeps the selected date on every tab.
+- [ ] **VIEW-07** Empty tab shows an empty state, not a blank screen. An empty past period is the same empty state, not an error.
+- [ ] **VIEW-08** Pull to refresh picks up a goal another account just created (for the visible period).
+- [ ] **VIEW-09** Overdue badge appears on a goal past its deadline that isn't Complete + Verified (use the SQL snippet). Still shows on a past incomplete goal.
+- [ ] **VIEW-10** Week ‹ › keeps the weekday (not Monday). Month ‹ › keeps the day-of-month; 31 Oct → previous month is 30 Sep, not 1 Oct; 31 Jan → 31 Dec. Year ‹ › from 29 Feb 2028 → 28 Feb 2027 / 28 Feb 2029. Opening Day afterwards shows that date, not the period start.
+- [ ] **VIEW-11** Reset copy matches the tab in front (Today / This week / This month / This year) and returns every tab on this screen to the current period. Hidden while the visible period is already current.
+- [ ] **VIEW-12** + button is hidden when the front tab's period is not current (yesterday, last week, tomorrow, …) and when viewing another member. It returns on yourself and the current period. Switching to Week while Day is on yesterday (still this week) shows the Week + button.
+- [ ] **VIEW-13** Leave Goals, visit History / Group, come back → date, tab, and member still as left.
+- [ ] **VIEW-14** Previous disables at 1 Jan 2020 and next at today + 5 years, on every type. Date picker first/last date are the same bounds.
 
 ## 5. Status changes (owner)
 
@@ -108,18 +113,19 @@ update goals set deadline = now() - interval '8 days' where title = 'Past goal';
 - [ ] **ADM-01** Alex sees an **Admin** tab in the bottom nav. Bri and Cam do not.
 - [ ] **ADM-02** Bri navigates to `/admin` → redirected to Goals.
 - [ ] **ADM-03** Other bottom-nav tabs still open the correct screens for both Alex and Bri (hidden tab doesn't shift destinations).
-- [ ] **ADM-04** Admin tab has Day/Week/Month/Year. Each lists **every** member (Alex first, then by name) with their goals and completion badge.
-- [ ] **ADM-05** A member with no goals in that period still appears with "No goals".
-- [ ] **ADM-06** Day tab date picker moves dates; Week/Month/Year stay on the current period.
-- [ ] **ADM-07** Admin Day date is independent of the Goals tab's Day date.
-- [ ] **ADM-08** Pull to refresh shows goals other members just created.
+- [ ] **ADM-04** Admin tab has Day/Week/Month/Year. Each lists **every** member (Alex first, then by name) with their goals and completion badge. Every tab shows the period navigator, not only Day.
+- [ ] **ADM-05** A member with no goals in that period still appears with "No goals" (including a past period they sat out).
+- [ ] **ADM-06** Shared date: changing the date on any Admin tab changes the other three Admin tabs to the period of that type that contains that date. Every member section is for that period.
+- [ ] **ADM-07** Admin's selected date is independent of Goals on all four tabs. Moving Goals does not move Admin; moving Admin does not move Goals. Leave Admin, visit Goals / History, come back → Admin date and tab still as left.
+- [ ] **ADM-08** Pull to refresh shows goals other members just created (for the visible period).
+- [ ] **ADM-09** Assign + is hidden when the front tab's period is not current, and returns on the current period. Reset copy is Today / This week / This month / This year. Stepping and bounds match Goals (weekday / day-of-month clamp / leap-day clamp; 1 Jan 2020 … today + 5 years).
 
 ## 9. Admin: assigning goals
 
 - [ ] **ASN-01** Alex taps + on Admin Week tab → sheet with member dropdown (Alex as "Me"), title, "Due: end of this week".
 - [ ] **ASN-02** Assign to Bri → appears under Bri in the Admin tab and in Bri's Week tab as Not started.
 - [ ] **ASN-03** Bri's card shows "Assigned by Alex".
-- [ ] **ASN-04** With the Admin Day picker on another date, assign a Day goal → deadline is end of **today**.
+- [ ] **ASN-04** Assign a Day goal from the current period → deadline is end of **today**. There is no UI to backdate: the assign button is hidden on any other day.
 - [ ] **ASN-05** Alex assigns to "Me" → normal own goal: no "Assigned by" label, Alex can edit/delete it like any own goal.
 - [ ] **ASN-06** Submitting without choosing a member → validation error.
 
@@ -134,6 +140,14 @@ update goals set deadline = now() - interval '8 days' where title = 'Past goal';
 - [ ] **ACT-07** An un-verified goal can be verified again by Cam or Alex.
 - [ ] **ACT-08** Alex never sees Verify or Un-verify on Alex's own goals; Bri can verify Alex's Complete goals.
 - [ ] **ACT-09** Alex's own verified goal: Alex can still edit/delete it (admin rule), but cannot change status or un-verify it.
+- [ ] **ACT-10** Admin last week: Alex renames Bri's **unverified** week goal → title updates on Admin, on Bri's Goals Week (when on that week), and in History.
+- [ ] **ACT-11** Admin last week: Alex renames Bri's **verified** week goal → succeeds; ⋮ menu still present for Alex.
+- [ ] **ACT-12** Admin last month: Alex deletes Cam's unverified month goal → confirm → gone; success toast; `deleted` event in Studio.
+- [ ] **ACT-13** Admin last year: Alex deletes a verified year goal → extra verified-delete warning, then gone.
+- [ ] **ACT-14** Admin past Day: Alex changes Cam's status → succeeds; Cam sees it when on that day. Locked while verified, same as today.
+- [ ] **ACT-15** Admin past Week: Alex verifies Bri's complete goal → verified for everyone after refresh. Un-verify → stays complete, "Awaiting verification", Bri's status control returns.
+- [ ] **ACT-16** Admin past period: Alex's own verified goal — edit/delete yes, status / un-verify no (same as ACT-09). Bri's assigned goal — Bri still has no ⋮; Alex can edit/delete/status as today.
+- [ ] **ACT-17** Bri on Goals, past week, viewing Cam → no edit/delete (Bri is not admin). Nothing extra expires just because the period has ended.
 
 ## 11. History
 
@@ -143,6 +157,7 @@ update goals set deadline = now() - interval '8 days' where title = 'Past goal';
 - [ ] **HIS-04** All statuses appear (Not started, In progress, Complete, Verified).
 - [ ] **HIS-05** Actions work from History exactly as in the tabs (status change, edit, delete, verify by others via Goals picker).
 - [ ] **HIS-06** Empty type shows "No past Week goals yet."
+- [ ] **HIS-07** History is still the archive: current period absent, ended periods listed, no member picker. Visiting last week on Goals Week or Admin Week does **not** remove it from History. Same goals in all three places; after Alex edits/deletes a last-week goal on Admin, Goals and History reflect it after refresh.
 
 ## 12. Stats
 

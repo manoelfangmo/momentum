@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 /// would fall due.
 ///
 /// The period containing now, read from [clockProvider], which is where a new
-/// goal lands whatever day a Day tab happens to be showing. Both sheets that
+/// goal lands whatever period a tab happens to be showing. Both sheets that
 /// make a goal show it and neither lets it be edited, so the member can see
 /// what they are committing to and the admin what they are asking for.
 class CurrentPeriodDueLabel extends ConsumerWidget {

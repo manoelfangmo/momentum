@@ -8,11 +8,13 @@ part of 'admin_tab_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Which period the [type] admin tab is on.
+/// Which period the [type] admin tab is on: the one of that type that
+/// contains the day the admin picked.
 ///
-/// Only Day follows a selection. Week, Month and Year are the period
-/// containing now and there is no way back through them: ended periods are
-/// History's, and the admin screen has none.
+/// Every tab follows that day, the way the goals tabs follow theirs. Its
+/// own day, not the goals tabs': moving Admin leaves Goals where it was,
+/// and the other way around. History is still the archive of ended
+/// periods; this is how the admin reaches them to act.
 ///
 /// A provider of its own so the tab's data and its header read one answer
 /// rather than each working the rule out again.
@@ -20,11 +22,13 @@ part of 'admin_tab_controller.dart';
 @ProviderFor(adminPeriod)
 final adminPeriodProvider = AdminPeriodFamily._();
 
-/// Which period the [type] admin tab is on.
+/// Which period the [type] admin tab is on: the one of that type that
+/// contains the day the admin picked.
 ///
-/// Only Day follows a selection. Week, Month and Year are the period
-/// containing now and there is no way back through them: ended periods are
-/// History's, and the admin screen has none.
+/// Every tab follows that day, the way the goals tabs follow theirs. Its
+/// own day, not the goals tabs': moving Admin leaves Goals where it was,
+/// and the other way around. History is still the archive of ended
+/// periods; this is how the admin reaches them to act.
 ///
 /// A provider of its own so the tab's data and its header read one answer
 /// rather than each working the rule out again.
@@ -32,11 +36,13 @@ final adminPeriodProvider = AdminPeriodFamily._();
 final class AdminPeriodProvider
     extends $FunctionalProvider<Period, Period, Period>
     with $Provider<Period> {
-  /// Which period the [type] admin tab is on.
+  /// Which period the [type] admin tab is on: the one of that type that
+  /// contains the day the admin picked.
   ///
-  /// Only Day follows a selection. Week, Month and Year are the period
-  /// containing now and there is no way back through them: ended periods are
-  /// History's, and the admin screen has none.
+  /// Every tab follows that day, the way the goals tabs follow theirs. Its
+  /// own day, not the goals tabs': moving Admin leaves Goals where it was,
+  /// and the other way around. History is still the archive of ended
+  /// periods; this is how the admin reaches them to act.
   ///
   /// A provider of its own so the tab's data and its header read one answer
   /// rather than each working the rule out again.
@@ -91,13 +97,15 @@ final class AdminPeriodProvider
   }
 }
 
-String _$adminPeriodHash() => r'd97684ad9433ab8b66b62d6e9a53d08623d5222e';
+String _$adminPeriodHash() => r'eb4cbc0d4069555977e824e017ea6c54c83fee8b';
 
-/// Which period the [type] admin tab is on.
+/// Which period the [type] admin tab is on: the one of that type that
+/// contains the day the admin picked.
 ///
-/// Only Day follows a selection. Week, Month and Year are the period
-/// containing now and there is no way back through them: ended periods are
-/// History's, and the admin screen has none.
+/// Every tab follows that day, the way the goals tabs follow theirs. Its
+/// own day, not the goals tabs': moving Admin leaves Goals where it was,
+/// and the other way around. History is still the archive of ended
+/// periods; this is how the admin reaches them to act.
 ///
 /// A provider of its own so the tab's data and its header read one answer
 /// rather than each working the rule out again.
@@ -113,11 +121,13 @@ final class AdminPeriodFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Which period the [type] admin tab is on.
+  /// Which period the [type] admin tab is on: the one of that type that
+  /// contains the day the admin picked.
   ///
-  /// Only Day follows a selection. Week, Month and Year are the period
-  /// containing now and there is no way back through them: ended periods are
-  /// History's, and the admin screen has none.
+  /// Every tab follows that day, the way the goals tabs follow theirs. Its
+  /// own day, not the goals tabs': moving Admin leaves Goals where it was,
+  /// and the other way around. History is still the archive of ended
+  /// periods; this is how the admin reaches them to act.
   ///
   /// A provider of its own so the tab's data and its header read one answer
   /// rather than each working the rule out again.

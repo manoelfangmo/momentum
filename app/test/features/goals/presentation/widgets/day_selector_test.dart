@@ -3,7 +3,7 @@ import 'package:app/core/utils/providers.dart';
 import 'package:app/features/auth/data/member_repository.dart';
 import 'package:app/features/goals/data/goals_repository.dart';
 import 'package:app/features/goals/presentation/controllers/goals_view_controller.dart';
-import 'package:app/core/widgets/day_selector.dart';
+import 'package:app/core/widgets/period_navigator.dart';
 import 'package:app/features/goals/presentation/widgets/goal_tab_view.dart';
 import 'package:app/features/groups/data/groups_repository.dart';
 import 'package:flutter/material.dart';
@@ -146,11 +146,26 @@ void main() {
     expect(find.text('Tue, Oct 6'), findsOneWidget);
   });
 
-  testWidgets('the other tabs have no day to move', (tester) async {
-    for (final type in [GoalType.weekly, GoalType.monthly, GoalType.yearly]) {
+  testWidgets('every tab has a navigator', (tester) async {
+    for (final type in GoalType.values) {
       await pumpTab(tester, type);
 
-      expect(find.byType(DaySelector), findsNothing);
+      expect(find.byType(PeriodNavigator), findsOneWidget);
     }
+  });
+
+  testWidgets('a week step keeps the weekday', (tester) async {
+    await pumpTab(tester, GoalType.weekly);
+
+    await tester.tap(find.byTooltip('Previous week'));
+    await tester.pumpAndSettle();
+
+    expect(
+      container.read(goalsViewControllerProvider).selectedDay,
+      DateTime(2026, 9, 30),
+    );
+    expect(find.text('Last week'), findsOneWidget);
+    expect(find.text('Week of Sep 28'), findsOneWidget);
+    expect(find.text('This week'), findsOneWidget);
   });
 }

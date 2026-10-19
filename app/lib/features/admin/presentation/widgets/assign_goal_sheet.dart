@@ -29,8 +29,8 @@ Future<void> showAssignGoalSheet(BuildContext context, GoalType type) {
 /// `assign_goal` only stamps `assigned_by` when the owner is somebody else.
 ///
 /// The deadline is the end of the current period of [type] and is shown
-/// rather than chosen. The Day tab's date picker does not reach it: the admin
-/// can look back at a past day, but a goal they set now is for now.
+/// rather than chosen. The navigator's date picker does not reach it: the
+/// admin can look back at a past period, but a goal they set now is for now.
 class AssignGoalSheet extends ConsumerStatefulWidget {
   const AssignGoalSheet({super.key, required this.type});
 

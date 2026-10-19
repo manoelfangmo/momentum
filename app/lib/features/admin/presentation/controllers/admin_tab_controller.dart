@@ -1,6 +1,5 @@
 import 'package:app/core/domain/domain.dart';
 import 'package:app/core/utils/app_exception.dart';
-import 'package:app/core/utils/providers.dart';
 import 'package:app/features/admin/presentation/controllers/admin_view_controller.dart';
 import 'package:app/features/admin/presentation/models/member_goals.dart';
 import 'package:app/features/auth/data/member_repository.dart';
@@ -11,23 +10,19 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'admin_tab_controller.g.dart';
 
-/// Which period the [type] admin tab is on.
+/// Which period the [type] admin tab is on: the one of that type that
+/// contains the day the admin picked.
 ///
-/// Only Day follows a selection. Week, Month and Year are the period
-/// containing now and there is no way back through them: ended periods are
-/// History's, and the admin screen has none.
+/// Every tab follows that day, the way the goals tabs follow theirs. Its
+/// own day, not the goals tabs': moving Admin leaves Goals where it was,
+/// and the other way around. History is still the archive of ended
+/// periods; this is how the admin reaches them to act.
 ///
 /// A provider of its own so the tab's data and its header read one answer
 /// rather than each working the rule out again.
 @riverpod
 Period adminPeriod(Ref ref, GoalType type) {
-  if (type != GoalType.daily) {
-    return Period.containing(ref.watch(clockProvider)(), type);
-  }
-  return Period.containing(
-    ref.watch(adminViewControllerProvider),
-    GoalType.daily,
-  );
+  return Period.containing(ref.watch(adminViewControllerProvider), type);
 }
 
 /// Every member of the admin's group with their [type] goals for that period.
