@@ -11,8 +11,9 @@ part of 'goal_tab_controller.dart';
 /// What the [type] tab shows: the shared selection turned into a period, and
 /// the selected member's goals for it.
 ///
-/// Only the Day tab follows `selectedDay`. Week, Month and Year always show
-/// the period containing now, so there is nothing to put them out of date.
+/// Every tab follows `selectedDay`. Day is that date, Week the week that
+/// contains it, Month its month, Year its year — one moment at four zooms,
+/// so moving any tab moves the other three.
 ///
 /// A family keyed by [type]: the four tabs are four caches, and each one
 /// reloads on its own.
@@ -23,8 +24,9 @@ final goalTabDataProvider = GoalTabDataFamily._();
 /// What the [type] tab shows: the shared selection turned into a period, and
 /// the selected member's goals for it.
 ///
-/// Only the Day tab follows `selectedDay`. Week, Month and Year always show
-/// the period containing now, so there is nothing to put them out of date.
+/// Every tab follows `selectedDay`. Day is that date, Week the week that
+/// contains it, Month its month, Year its year — one moment at four zooms,
+/// so moving any tab moves the other three.
 ///
 /// A family keyed by [type]: the four tabs are four caches, and each one
 /// reloads on its own.
@@ -40,8 +42,9 @@ final class GoalTabDataProvider
   /// What the [type] tab shows: the shared selection turned into a period, and
   /// the selected member's goals for it.
   ///
-  /// Only the Day tab follows `selectedDay`. Week, Month and Year always show
-  /// the period containing now, so there is nothing to put them out of date.
+  /// Every tab follows `selectedDay`. Day is that date, Week the week that
+  /// contains it, Month its month, Year its year — one moment at four zooms,
+  /// so moving any tab moves the other three.
   ///
   /// A family keyed by [type]: the four tabs are four caches, and each one
   /// reloads on its own.
@@ -89,13 +92,14 @@ final class GoalTabDataProvider
   }
 }
 
-String _$goalTabDataHash() => r'e78f0a8a8f7c4410c2a27123b6559c4c441360f2';
+String _$goalTabDataHash() => r'e0c1db2a9f0aefe30e11926a3831dda36979f364';
 
 /// What the [type] tab shows: the shared selection turned into a period, and
 /// the selected member's goals for it.
 ///
-/// Only the Day tab follows `selectedDay`. Week, Month and Year always show
-/// the period containing now, so there is nothing to put them out of date.
+/// Every tab follows `selectedDay`. Day is that date, Week the week that
+/// contains it, Month its month, Year its year — one moment at four zooms,
+/// so moving any tab moves the other three.
 ///
 /// A family keyed by [type]: the four tabs are four caches, and each one
 /// reloads on its own.
@@ -114,8 +118,9 @@ final class GoalTabDataFamily extends $Family
   /// What the [type] tab shows: the shared selection turned into a period, and
   /// the selected member's goals for it.
   ///
-  /// Only the Day tab follows `selectedDay`. Week, Month and Year always show
-  /// the period containing now, so there is nothing to put them out of date.
+  /// Every tab follows `selectedDay`. Day is that date, Week the week that
+  /// contains it, Month its month, Year its year — one moment at four zooms,
+  /// so moving any tab moves the other three.
   ///
   /// A family keyed by [type]: the four tabs are four caches, and each one
   /// reloads on its own.

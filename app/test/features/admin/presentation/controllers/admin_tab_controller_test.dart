@@ -128,19 +128,18 @@ void main() {
     verify(goals.fetchGroupGoals(groupId: 'group-1', period: day)).called(1);
   });
 
-  test('the other tabs stay on the current period', () async {
+  test('every tab follows the selected day', () async {
+    final picked = DateTime(2026, 9, 2);
     final c = container();
-    c
-        .read(adminViewControllerProvider.notifier)
-        .selectDay(DateTime(2026, 9, 2));
+    c.read(adminViewControllerProvider.notifier).selectDay(picked);
 
-    for (final type in [GoalType.weekly, GoalType.monthly, GoalType.yearly]) {
+    for (final type in GoalType.values) {
       await read(c, type);
 
       verify(
         goals.fetchGroupGoals(
           groupId: 'group-1',
-          period: Period.containing(_now, type),
+          period: Period.containing(picked, type),
         ),
       ).called(1);
     }

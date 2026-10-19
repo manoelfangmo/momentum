@@ -42,9 +42,8 @@ void main() {
   setUp(() {
     goals = MockGoalsRepository();
     groups = MockGroupsRepository();
-    when(
-      groups.fetchMembers('group-1'),
-    ).thenAnswer((_) async => [_ada, _grace]);
+    when(groups.fetchMembers('group-1'))
+        .thenAnswer((_) async => [_ada, _grace]);
     when(
       goals.fetchGoals(
         ownerId: anyNamed('ownerId'),
@@ -109,9 +108,8 @@ void main() {
     final today = Period.containing(_now, GoalType.daily);
     final run = goalCalled('Run 5k', GoalType.daily);
     var saved = false;
-    when(
-      goals.fetchGoals(ownerId: 'user-1', period: today),
-    ).thenAnswer((_) async => saved ? [run] : []);
+    when(goals.fetchGoals(ownerId: 'user-1', period: today))
+        .thenAnswer((_) async => saved ? [run] : []);
     when(goals.createGoal(any)).thenAnswer((_) async {
       saved = true;
       return run;
@@ -127,6 +125,65 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Run 5k'), findsOneWidget);
+  });
+
+  testWidgets('there is no new goal button off the current period', (
+    tester,
+  ) async {
+    await pumpPage(tester);
+
+    await tester.tap(find.byTooltip('Previous day'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.text('Today'), findsOneWidget);
+  });
+
+  testWidgets('the new goal button returns on the current period', (
+    tester,
+  ) async {
+    await pumpPage(tester);
+    await tester.tap(find.byTooltip('Previous day'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Today'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('New Day goal'), findsOneWidget);
+  });
+
+  testWidgets('tomorrow hides the new goal button', (tester) async {
+    await pumpPage(tester);
+
+    await tester.tap(find.byTooltip('Next day'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FloatingActionButton), findsNothing);
+  });
+
+  testWidgets('Week still has a button when Day is on yesterday', (
+    tester,
+  ) async {
+    await pumpPage(tester);
+    await tester.tap(find.byTooltip('Previous day'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Week'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('New Week goal'), findsOneWidget);
+  });
+
+  testWidgets('last week hides the Week button', (tester) async {
+    await pumpPage(tester);
+    await tester.tap(find.text('Week'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Previous week'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.text('This week'), findsOneWidget);
   });
 
   testWidgets('there is no new goal button on another member', (tester) async {

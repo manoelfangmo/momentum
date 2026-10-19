@@ -222,6 +222,46 @@ void main() {
       );
     });
 
+    test('stepDay keeps the weekday, the day-of-month, and leap days', () {
+      expect(
+        Period.stepDay(DateTime(2026, 10, 7), GoalType.weekly, steps: -1),
+        DateTime(2026, 9, 30),
+      );
+      expect(
+        Period.stepDay(DateTime(2026, 10, 7), GoalType.weekly, steps: 1),
+        DateTime(2026, 10, 14),
+      );
+      expect(
+        Period.stepDay(DateTime(2026, 10, 31), GoalType.monthly, steps: -1),
+        DateTime(2026, 9, 30),
+        reason: '31 Oct → previous month is 30 Sep, not 1 Oct',
+      );
+      expect(
+        Period.stepDay(DateTime(2026, 1, 31), GoalType.monthly, steps: -1),
+        DateTime(2025, 12, 31),
+      );
+      expect(
+        Period.stepDay(DateTime(2028, 2, 29), GoalType.yearly, steps: -1),
+        DateTime(2027, 2, 28),
+      );
+      expect(
+        Period.stepDay(DateTime(2028, 2, 29), GoalType.yearly, steps: 1),
+        DateTime(2029, 2, 28),
+      );
+    });
+
+    test('stepDay moves local calendar days through a DST week', () {
+      // 2026-03-08 is the US spring-forward Sunday.
+      expect(
+        Period.stepDay(DateTime(2026, 3, 4), GoalType.weekly, steps: -1),
+        DateTime(2026, 2, 25),
+      );
+      expect(
+        Period.stepDay(DateTime(2026, 3, 8), GoalType.weekly, steps: 1),
+        DateTime(2026, 3, 15),
+      );
+    });
+
     test('labels', () {
       expect(
         Period.containing(DateTime(2026, 10, 6), GoalType.daily).label,
